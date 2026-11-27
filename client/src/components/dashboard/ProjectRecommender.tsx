@@ -1,5 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { ProjectBlueprint, DEFAULT_PROJECT_CATALOG } from "../../data/projectCatalog";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  ProjectBlueprint,
+  DEFAULT_PROJECT_CATALOG,
+  findBestMatchingBlueprint,
+  buildProjectExecutionSteps,
+} from "../../data/projectCatalog";
 import { SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 interface ProjectRecommenderProps {
@@ -8,7 +13,7 @@ interface ProjectRecommenderProps {
   apiBase?: string;
 }
 
-type CategoryTab = "all" | "software" | "hardware";
+type CategoryTab = "all" | "starter" | "software" | "hardware";
 
 export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   targetRole,
@@ -20,72 +25,102 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   const [activeTab, setActiveTab] = useState<CategoryTab>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [expandedGuideId, setExpandedGuideId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleHighlight = (e: any) => {
-      const q = String(e?.detail?.query || e?.detail?.target || e?.detail?.projectId || "")
-        .toLowerCase()
-        .trim();
+  const focusAndHighlightBlueprint = useCallback(
+    (rawQueryOrId: string, shouldOpenGuide = true) => {
+      const q = String(rawQueryOrId || "").trim();
       if (!q) return;
 
-      let matched = projectsList.find((p) => p.id.toLowerCase() === q);
-      if (
-        !matched &&
-        (q.includes("chinna") ||
-          q.includes("small") ||
-          q.includes("beginner") ||
-          q.includes("starter") ||
-          q.includes("easy") ||
-          q.includes("log") ||
-          q.includes("anomaly") ||
-          q.includes("detector"))
-      ) {
-        matched =
-          projectsList.find(
-            (p) =>
-              p.title.toLowerCase().includes("anomaly") ||
-              p.overview.toLowerCase().includes("anomaly") ||
-              p.difficulty.toLowerCase().includes("intermediate") ||
-              p.id === "proj-sde-1"
-          ) || projectsList[0];
+      const { project: matched, index: bpNum } = findBestMatchingBlueprint(q, projectsList);
+      if (!matched) return;
+
+      setActiveTab("all");
+      setSearchQuery("");
+      setHighlightedId(matched.id);
+      if (shouldOpenGuide) {
+        setExpandedGuideId(matched.id);
       }
-      if (!matched) {
-        matched = projectsList.find(
-          (p) =>
-            p.title.toLowerCase().includes(q) ||
-            p.techStack.some((t) => t.toLowerCase().includes(q)) ||
-            p.domain.toLowerCase().includes(q) ||
-            p.overview.toLowerCase().includes(q)
+
+      try {
+        const prev = (window as any).__DAS_PAGE_CONTEXT__ || {};
+        const nextCtx = {
+          ...prev,
+          activeTab: "projects",
+          activeProject: matched.title,
+          projectTitle: matched.title,
+          blueprintNumber: bpNum,
+          cardContext: `Blueprint #${String(bpNum).padStart(2, "0")}: ${matched.title} (${matched.difficulty})`,
+          timestamp: Date.now(),
+        };
+        (window as any).__DAS_PAGE_CONTEXT__ = nextCtx;
+        window.dispatchEvent(new CustomEvent("das:page-context", { detail: nextCtx }));
+      } catch { }
+
+      const scrollCardIntoCenter = () => {
+        const el = document.getElementById(`project-card-${matched.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      };
+      window.setTimeout(scrollCardIntoCenter, 140);
+      window.setTimeout(scrollCardIntoCenter, 420);
+
+      window.setTimeout(() => {
+        setHighlightedId((curr) => (curr === matched.id ? null : curr));
+      }, 14000);
+    },
+    [projectsList]
+  );
+
+  useEffect(() => {
+    const consumePendingHighlight = () => {
+      if (typeof window === "undefined") return;
+      const pending = (window as any).__DAS_PENDING_PROJECT_HIGHLIGHT__;
+      if (pending && Date.now() - Number(pending.ts || 0) < 15000) {
+        delete (window as any).__DAS_PENDING_PROJECT_HIGHLIGHT__;
+        focusAndHighlightBlueprint(
+          pending.projectId || pending.query || pending.target || "",
+          pending.openGuide !== false
         );
       }
+    };
 
-      if (matched) {
-        const cat = (matched.category || "").toLowerCase();
-        if (cat === "hardware") setActiveTab("hardware");
-        else if (cat === "software") setActiveTab("software");
-        else setActiveTab("all");
+    consumePendingHighlight();
 
-        setSearchQuery("");
-        setHighlightedId(matched.id);
-
-        setTimeout(() => {
-          const el = document.getElementById(`project-card-${matched!.id}`);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        }, 180);
-
-        setTimeout(() => {
-          setHighlightedId((curr) => (curr === matched!.id ? null : curr));
-        }, 8000);
+    const handleHighlight = (e: any) => {
+      if (typeof window !== "undefined") {
+        delete (window as any).__DAS_PENDING_PROJECT_HIGHLIGHT__;
       }
+      const q = String(
+        e?.detail?.projectId || e?.detail?.query || e?.detail?.target || ""
+      ).trim();
+      if (!q) return;
+      focusAndHighlightBlueprint(q, e?.detail?.openGuide !== false);
+    };
+
+    const handleOpenBlueprintNum = (e: any) => {
+      const n = Number(e?.detail?.blueprintNumber || 0);
+      if (n >= 1) {
+        focusAndHighlightBlueprint(`blueprint ${n}`, true);
+      }
+    };
+
+    const handleFilterProjects = (e: any) => {
+      const branch = String(e?.detail?.branch || e?.detail?.query || "").trim();
+      setActiveTab("all");
+      setSearchQuery(branch);
     };
 
     window.addEventListener("das-highlight-project", handleHighlight);
+    window.addEventListener("das-open-blueprint", handleOpenBlueprintNum);
+    window.addEventListener("das-filter-projects", handleFilterProjects);
     return () => {
       window.removeEventListener("das-highlight-project", handleHighlight);
+      window.removeEventListener("das-open-blueprint", handleOpenBlueprintNum);
+      window.removeEventListener("das-filter-projects", handleFilterProjects);
     };
-  }, [projectsList]);
+  }, [focusAndHighlightBlueprint]);
 
   useEffect(() => {
     let isMounted = true;
@@ -116,6 +151,8 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   const filteredProjects = useMemo(() => {
     return projectsList.filter((proj) => {
       const cat = (proj.category || "").toLowerCase();
+      const diff = (proj.difficulty || "").toLowerCase();
+      if (activeTab === "starter" && diff !== "starter" && diff !== "intermediate") return false;
       if (activeTab === "software" && cat !== "software") return false;
       if (activeTab === "hardware" && cat !== "hardware") return false;
 
@@ -147,6 +184,10 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
   const counts = useMemo(() => {
     return {
       all: projectsList.length,
+      starter: projectsList.filter((p) => {
+        const d = (p.difficulty || "").toLowerCase();
+        return d === "starter" || d === "intermediate";
+      }).length,
       software: projectsList.filter((p) => (p.category || "").toLowerCase() === "software").length,
       hardware: projectsList.filter((p) => (p.category || "").toLowerCase() === "hardware").length,
     };
@@ -187,6 +228,7 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
             {(
               [
                 { id: "all", label: "All Architectures", count: counts.all },
+                { id: "starter", label: "Small & Starter", count: counts.starter },
                 { id: "software", label: "Software Systems", count: counts.software },
                 { id: "hardware", label: "Hardware & Embedded", count: counts.hardware },
               ] as const
@@ -243,18 +285,22 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
       ) : (
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
           {filteredProjects.map((proj) => {
+            const catalogIdx = Math.max(
+              1,
+              projectsList.findIndex((item) => item.id === proj.id) + 1
+            );
             const isCopied = copiedId === proj.id;
             const isHardware = (proj.category || "").toLowerCase() === "hardware";
             const isHighlighted = highlightedId === proj.id;
-            const isSmall =
-              (proj.difficulty || "").toLowerCase() === "intermediate" ||
-              (proj.title || "").toLowerCase().includes("anomaly") ||
-              (proj.title || "").toLowerCase().includes("telemetry") ||
-              proj.id === "proj-sde-1";
-            const isMedium = !isSmall && (proj.techStack?.length || 0) <= 4;
+            const isGuideOpen = expandedGuideId === proj.id;
+            const diffLower = (proj.difficulty || "").toLowerCase();
+            const isSmall = diffLower === "starter";
+            const isMedium = diffLower === "intermediate";
             const bpSize = isSmall ? "small" : isMedium ? "medium" : "large";
+            const buildSteps = buildProjectExecutionSteps(proj, catalogIdx);
             const bpData = JSON.stringify({
               id: proj.id,
+              blueprintNumber: catalogIdx,
               title: proj.title,
               size: bpSize,
               difficulty: proj.difficulty,
@@ -271,7 +317,8 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                   ...prev,
                   activeProject: proj.title,
                   projectTitle: proj.title,
-                  cardContext: `${proj.title} (${proj.domain || proj.category || "Blueprint"})`,
+                  blueprintNumber: catalogIdx,
+                  cardContext: `Blueprint #${String(catalogIdx).padStart(2, "0")}: ${proj.title} (${proj.domain || proj.category || "Blueprint"})`,
                   timestamp: Date.now(),
                 };
                 (window as any).__DAS_PAGE_CONTEXT__ = nextCtx;
@@ -284,14 +331,15 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                 key={proj.id}
                 id={`project-card-${proj.id}`}
                 data-project-id={proj.id}
+                data-blueprint-number={catalogIdx}
                 data-blueprint-size={bpSize}
                 data-size={bpSize}
                 data-blueprint-data={bpData}
                 data-difficulty={proj.difficulty}
                 onMouseEnter={notifyActiveProject}
                 onClick={notifyActiveProject}
-                className={`flex flex-col justify-between rounded-2xl border p-7 sm:p-9 transition-colors duration-200 ${isHighlighted
-                  ? "border-[#FAFAFA] bg-[#14141A]/90 ring-2 ring-white/30"
+                className={`flex flex-col justify-between rounded-2xl border p-7 sm:p-9 transition-all duration-200 ${isHighlighted
+                  ? "border-[#FAFAFA] bg-[#14141A]/95 ring-2 ring-white/35 shadow-[0_0_40px_rgba(255,255,255,0.12)]"
                   : "pf-titanium-card"
                   }`}
               >
@@ -299,6 +347,9 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                   {/* Metadata Row */}
                   <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="rounded border border-white/[0.14] bg-[#16161D] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#FAFAFA] tabular-nums">
+                        #{String(catalogIdx).padStart(2, "0")}
+                      </span>
                       <span className="rounded border border-[#27272A] bg-[#101014] px-2 py-0.5 font-mono text-[10px] font-medium text-[#FAFAFA]">
                         {isHardware ? "Hardware & Embedded" : "Software Systems"}
                       </span>
@@ -308,14 +359,14 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                         </span>
                       )}
                       {isHighlighted && (
-                        <span className="rounded border border-[#FAFAFA]/40 bg-[#18181E] px-2 py-0.5 font-mono text-[10px] font-medium text-[#FAFAFA]">
-                          Recommended
+                        <span className="rounded border border-[#FAFAFA]/50 bg-[#FAFAFA] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#09090B]">
+                          Selected by DAS
                         </span>
                       )}
                     </div>
 
-                    <span className="rounded border border-[#222226] bg-[#0C0C0E] px-2 py-0.5 font-mono text-[10px] text-[#A1A1AA]">
-                      {proj.difficulty}
+                    <span className="rounded border border-[#27272A] bg-[#0C0C0E] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]">
+                      {isSmall ? "Starter · 4–6 Days" : isMedium ? "Intermediate · 1–2 Wks" : proj.difficulty}
                     </span>
                   </div>
 
@@ -394,23 +445,68 @@ export const ProjectRecommender: React.FC<ProjectRecommenderProps> = ({
                       {proj.resumeBullet}
                     </p>
                   </div>
+
+                  {isGuideOpen && (
+                    <div
+                      data-build-guide={proj.id}
+                      className="space-y-3 rounded-xl border border-white/[0.16] bg-[#0B0B10] p-4"
+                    >
+                      <div className="flex items-center justify-between border-b border-white/[0.08] pb-2">
+                        <span className="font-mono text-[11px] font-semibold text-[#FAFAFA]">
+                          5-Step Build &amp; Deployment Roadmap · Blueprint #{String(catalogIdx).padStart(2, "0")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedGuideId(null)}
+                          className="font-mono text-[10px] text-[#A1A1AA] hover:text-[#FAFAFA] cursor-pointer"
+                        >
+                          Close
+                        </button>
+                      </div>
+                      <ol className="space-y-2.5">
+                        {buildSteps.map((st) => (
+                          <li key={st.phase} className="space-y-0.5 text-xs leading-relaxed">
+                            <div className="font-medium text-[#FAFAFA]">
+                              <span className="mr-2 font-mono text-[10px] text-[#8A8A92]">
+                                {st.phase}
+                              </span>
+                              {st.title}
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-[#A1A1AA]">{st.detail}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
                 </div>
 
-                <div className="pt-5">
+                <div className="grid grid-cols-1 gap-2.5 pt-5 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={() => {
                       notifyActiveProject();
+                      setExpandedGuideId((prev) => (prev === proj.id ? null : proj.id));
+                    }}
+                    className="pf-btn-secondary inline-flex h-10 w-full items-center justify-center rounded-lg px-3 text-xs font-medium text-[#FAFAFA] active:scale-[0.98] cursor-pointer"
+                  >
+                    {isGuideOpen ? "Hide Build Steps" : "How to Build (5 Steps)"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      notifyActiveProject();
+                      setExpandedGuideId(proj.id);
                       try {
                         sessionStorage.setItem("pathfinder_blueprint_voice_trigger", "true");
                       } catch { }
                       onAskCoach(
-                        `Let's discuss how to build '${proj.title}'. What should the complete system architecture, component stack, 5-phase build roadmap, and top technical interview defense talking points look like?`
+                        `Explain step-by-step how to build Blueprint #${String(catalogIdx).padStart(2, "0")} '${proj.title}' (${proj.techStack.join(", ")}), including VS Code folder layout, core pipeline (${proj.architectureSummary || proj.domain}), deployment on Vercel and Render, and viva defense points.`
                       );
                     }}
-                    className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-[#27272A] bg-[#141418] text-xs font-medium text-[#FAFAFA] transition-colors hover:border-[#3F3F46] hover:bg-[#1C1C22] active:scale-[0.98] cursor-pointer"
+                    className="pf-btn-primary inline-flex h-10 w-full items-center justify-center rounded-lg px-3 text-xs font-medium active:scale-[0.98] cursor-pointer"
                   >
-                    Discuss Architecture with AI Coach
+                    Ask DAS to Explain Build
                   </button>
                 </div>
               </div>

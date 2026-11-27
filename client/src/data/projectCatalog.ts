@@ -22,7 +22,7 @@ export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
     "roleId": "sde",
     "title": "Distributed Asynchronous Job Queue & Rate Limiter",
     "domain": "Backend Systems & Concurrency",
-    "difficulty": "Advanced",
+    "difficulty": "Starter",
     "techStack": [
       "Python",
       "FastAPI",
@@ -47,7 +47,7 @@ export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
     "roleId": "fullstack",
     "title": "Real-Time Collaborative Code & Canvas Studio",
     "domain": "Full-Stack Web & WebSockets",
-    "difficulty": "Advanced",
+    "difficulty": "Intermediate",
     "techStack": [
       "React 19",
       "TypeScript",
@@ -147,7 +147,7 @@ export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
     "roleId": "embedded-iot",
     "title": "Industrial Edge Sensor Telemetry & Anomaly Node",
     "domain": "Embedded Systems & Edge Computing",
-    "difficulty": "Advanced",
+    "difficulty": "Starter",
     "techStack": [
       "Embedded C",
       "FreeRTOS",
@@ -540,7 +540,7 @@ export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
     "title": "High-Efficiency Solar-Hybrid Multi-Spindle Precision Yarn Production System",
     "domain": "Agriculture & Rural Micro-Enterprise",
     "organization": "Renewable Energy Precision Machinery Lab",
-    "difficulty": "Intermediate",
+    "difficulty": "Starter",
     "techStack": [
       "SolidWorks",
       "12V 100W BLDC Motor",
@@ -709,7 +709,7 @@ export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
     "title": "Sovereign Air-Gapped Local RAG Engine with Quantized Open-Source LLMs",
     "domain": "Air-Gapped Systems & Sovereign AI",
     "organization": "National Cyber Security & Sovereign Systems Lab",
-    "difficulty": "Advanced",
+    "difficulty": "Starter",
     "techStack": [
       "Python 3.11",
       "vLLM / Ollama",
@@ -767,7 +767,7 @@ export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
     "title": "Cross-Lingual Vernacular RAG Pipeline for Public Governance & Healthcare Documents",
     "domain": "Vernacular NLP & Civic Tech Intelligence",
     "organization": "Public Digital Infrastructure & Language AI Lab",
-    "difficulty": "Advanced",
+    "difficulty": "Intermediate",
     "techStack": [
       "Python 3.11",
       "AI4Bharat IndicTrans2",
@@ -788,3 +788,182 @@ export const DEFAULT_PROJECT_CATALOG: ProjectBlueprint[] = [
     "resumeBullet": "Deployed a cross-lingual Indic RAG platform processing 1,200+ government gazettes, enabling conversational Telugu and Hindi policy queries with 94.6% semantic alignment and real-time audio playback."
   }
 ];
+
+export interface BlueprintBuildStep {
+  phase: string;
+  title: string;
+  detail: string;
+}
+
+export function buildProjectExecutionSteps(
+  proj: ProjectBlueprint,
+  blueprintNumber = 1
+): BlueprintBuildStep[] {
+  const isHardware = (proj.category || "").toLowerCase() === "hardware";
+  const stackLine = (proj.techStack || []).join(", ");
+  const f0 = proj.features?.[0] || "Core ingestion & request validation pipeline";
+  const f1 = proj.features?.[1] || "Primary processing engine & state management";
+  const f2 = proj.features?.[2] || "Fault tolerance, caching & optimization layer";
+  const f3 = proj.features?.[3] || "Live telemetry dashboard & verification suite";
+
+  if (isHardware) {
+    return [
+      {
+        phase: "STEP 01",
+        title: `Hardware BOM & Workspace Setup (Blueprint #${String(blueprintNumber).padStart(2, "0")})`,
+        detail: `Create folders firmware/src/, cad/, and gateway-ui/ in VS Code + PlatformIO. Assemble core components: ${stackLine}.`,
+      },
+      {
+        phase: "STEP 02",
+        title: "Sensor & Actuator Driver Layer",
+        detail: `Wire microcontroller buses (I2C/SPI/UART/PWM) and calibrate raw readings: ${f0}.`,
+      },
+      {
+        phase: "STEP 03",
+        title: "Real-Time Control Loop & Edge Filtering",
+        detail: `Implement deterministic control / TinyML logic (${proj.architectureSummary || stackLine}): ${f1}; ${f2}.`,
+      },
+      {
+        phase: "STEP 04",
+        title: "Telemetry Dashboard & Cloud Sync",
+        detail: `Stream live device metrics to your web monitor (deploy UI on Vercel & API gateway on Render): ${f3}.`,
+      },
+      {
+        phase: "STEP 05",
+        title: "Bench Testing & Viva Defense",
+        detail: `Log latency, power draw, and accuracy metrics, then add this X-Y-Z bullet to your resume: "${proj.resumeBullet}"`,
+      },
+    ];
+  }
+
+  return [
+    {
+      phase: "STEP 01",
+      title: `VS Code Repo & Architecture Setup (Blueprint #${String(blueprintNumber).padStart(2, "0")})`,
+      detail: `Initialize backend/ (main.py, core_engine.py, schemas.py, requirements.txt, .env) and frontend/ (src/components/, src/lib/) in VS Code using: ${stackLine}.`,
+    },
+    {
+      phase: "STEP 02",
+      title: "Ingestion & Core Backend Pipeline",
+      detail: `Build the primary backend service following ${proj.architectureSummary || "the modular API pipeline"} — starting with: ${f0}.`,
+    },
+    {
+      phase: "STEP 03",
+      title: "Intelligence, Indexing & Reliability Layer",
+      detail: `Implement the core algorithmic/data engine (${f1}) plus resilience & accuracy guards (${f2}).`,
+    },
+    {
+      phase: "STEP 04",
+      title: "Interactive Frontend UI & Telemetry",
+      detail: `Connect the React + TypeScript interface to live backend endpoints and ship ${f3}.`,
+    },
+    {
+      phase: "STEP 05",
+      title: "Vercel + Render Deployment & Viva Defense",
+      detail: `Deploy frontend on Vercel and backend on Render, run load/unit checks, and use this X-Y-Z resume bullet: "${proj.resumeBullet}"`,
+    },
+  ];
+}
+
+export function findBestMatchingBlueprint(
+  rawQuery: string,
+  catalog: ProjectBlueprint[] = DEFAULT_PROJECT_CATALOG,
+  preferredBranch?: string
+): { project: ProjectBlueprint; index: number } {
+  const list = Array.isArray(catalog) && catalog.length > 0 ? catalog : DEFAULT_PROJECT_CATALOG;
+  const q = (rawQuery || "").toLowerCase().trim();
+  const branchHint = (preferredBranch || "").toLowerCase().trim();
+
+  if (!q) {
+    return { project: list[0], index: 1 };
+  }
+
+  // 1. Direct ID or PS code match
+  const exactIdx = list.findIndex(
+    (p) =>
+      p.id.toLowerCase() === q ||
+      (p.psCode && p.psCode.toLowerCase() === q)
+  );
+  if (exactIdx !== -1) {
+    return { project: list[exactIdx], index: exactIdx + 1 };
+  }
+
+  // 2. Explicit Blueprint # number ("blueprint 3", "#5", "project 1")
+  const numMatch = q.match(/(?:blueprint|project|#)\s*#?\s*(\d{1,2})\b/i);
+  if (numMatch) {
+    const n = parseInt(numMatch[1], 10);
+    if (n >= 1 && n <= list.length) {
+      return { project: list[n - 1], index: n };
+    }
+  }
+
+  const wantsSmall =
+    /\b(small|chinna|starter|beginner|easy|simple|mini|quick|short|basic|4[\s-]?day|first)\b/i.test(q);
+  const wantsMedium = /\b(medium|intermediate|moderate)\b/i.test(q);
+  const wantsHardware =
+    /\b(hardware|iot|embedded|esp32|stm32|arduino|sensor|solar|robot|robotics|amr|exoskeleton|ece|eee|mech|mechanical|mining)\b/i.test(
+      q
+    );
+  const wantsRag = /\b(rag|graphrag|colpali|retrieval|llm|genai|vernacular|multidoc)\b/i.test(q);
+
+  // 3. Dedicated fast-path for "pick a small / starter project"
+  if (wantsSmall) {
+    if (/\b(solar|mech|mechanical|yarn|spinning)\b/i.test(q) || (!wantsRag && /mech/i.test(branchHint))) {
+      const idx = list.findIndex((p) => p.id === "pf-ind-020-solar-hybrid-spinning");
+      if (idx !== -1) return { project: list[idx], index: idx + 1 };
+    }
+    if (wantsHardware || (!wantsRag && /\b(ece|eee|iot)\b/i.test(branchHint))) {
+      const idx = list.findIndex((p) => p.id === "proj-embedded-1");
+      if (idx !== -1) return { project: list[idx], index: idx + 1 };
+    }
+    if (wantsRag || /\b(aiml|ai)\b/i.test(q)) {
+      const idx = list.findIndex((p) => p.id === "pf-rag-local-sovereign");
+      if (idx !== -1) return { project: list[idx], index: idx + 1 };
+    }
+    const starterIdx = list.findIndex((p) => p.id === "proj-sde-1");
+    if (starterIdx !== -1) return { project: list[starterIdx], index: starterIdx + 1 };
+  }
+
+  // 4. Keyword + semantic scoring across all 28 blueprints
+  const queryTokens = q
+    .replace(/[^a-z0-9+#\s-]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && !/^(pick|give|show|open|take|project|projects|blueprint|blueprints|from|website|the|and|how|build|explain|chey|ivvu|oka|lo|ki|ela)$/i.test(t));
+
+  let bestIdx = 0;
+  let bestScore = -1;
+
+  list.forEach((p, idx) => {
+    let score = 0;
+    const titleL = (p.title || "").toLowerCase();
+    const domL = (p.domain || "").toLowerCase();
+    const ovL = (p.overview || "").toLowerCase();
+    const brL = (p.branch || "").toLowerCase();
+    const catL = (p.category || "").toLowerCase();
+    const diffL = (p.difficulty || "").toLowerCase();
+    const stackL = (p.techStack || []).join(" ").toLowerCase();
+
+    if (titleL.includes(q)) score += 30;
+    if (wantsHardware && catL === "hardware") score += 12;
+    if (!wantsHardware && wantsRag && p.id.startsWith("pf-rag-")) score += 14;
+    if (wantsSmall && diffL === "starter") score += 18;
+    if (wantsMedium && diffL === "intermediate") score += 14;
+    if (branchHint && brL.includes(branchHint)) score += 4;
+
+    for (const tok of queryTokens) {
+      if (titleL.includes(tok)) score += 10;
+      if (p.id.toLowerCase().includes(tok)) score += 9;
+      if (stackL.includes(tok)) score += 7;
+      if (domL.includes(tok)) score += 6;
+      if (brL.includes(tok)) score += 5;
+      if (ovL.includes(tok)) score += 3;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = idx;
+    }
+  });
+
+  return { project: list[bestIdx], index: bestIdx + 1 };
+}

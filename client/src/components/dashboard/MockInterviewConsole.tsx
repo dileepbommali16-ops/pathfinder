@@ -295,8 +295,7 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
     setIsLoadingVoice(true);
     const canUseSameOriginEdge =
       typeof window !== "undefined" &&
-      window.location?.protocol?.startsWith("http") &&
-      !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
+      Boolean(window.location?.hostname?.endsWith(".vercel.app"));
     const ttsUrls = [
       `${API_BASE}/api/voice/tts`,
       ...(canUseSameOriginEdge ? ["/api/edge-tts"] : []),
@@ -506,11 +505,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             setSelectedQuestionIndex(0);
             resetState();
           }}
-          className={`h-10 rounded-xl border px-4.5 text-xs font-medium transition-colors cursor-pointer ${
-            selectedTrack === "company"
-              ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
-              : "pf-btn-secondary"
-          }`}
+          className={`h-10 rounded-xl border px-4.5 text-xs font-medium transition-colors cursor-pointer ${selectedTrack === "company"
+            ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
+            : "pf-btn-secondary"
+            }`}
         >
           Company Rounds (4)
         </button>
@@ -522,11 +520,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
             setSelectedQuestionIndex(0);
             resetState();
           }}
-          className={`h-10 rounded-xl border px-4.5 text-xs font-medium transition-colors cursor-pointer ${
-            selectedTrack === "defense"
-              ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
-              : "pf-btn-secondary"
-          }`}
+          className={`h-10 rounded-xl border px-4.5 text-xs font-medium transition-colors cursor-pointer ${selectedTrack === "defense"
+            ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
+            : "pf-btn-secondary"
+            }`}
         >
           Project Defense &amp; Viva (4)
         </button>
@@ -542,11 +539,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               setSelectedQuestionIndex(idx);
               resetState();
             }}
-            className={`flex h-9 shrink-0 items-center gap-2 rounded-lg border px-4 text-xs font-medium transition-colors cursor-pointer ${
-              selectedQuestionIndex === idx
-                ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
-                : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
-            }`}
+            className={`flex h-9 shrink-0 items-center gap-2 rounded-lg border px-4 text-xs font-medium transition-colors cursor-pointer ${selectedQuestionIndex === idx
+              ? "border-white/[0.28] bg-[#18181F] text-[#FAFAFA]"
+              : "border-white/[0.07] bg-[#0E0E12] text-[#A1A1AA] hover:border-white/[0.16] hover:text-[#FAFAFA]"
+              }`}
           >
             <span>{selectedTrack === "defense" ? q.roundType : q.company.split("/")[0]}</span>
             <span className="font-mono text-[10px] text-[#8A8A92]">({q.difficulty})</span>
@@ -631,11 +627,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
               type="button"
               onClick={handleSeeAgentAnswer}
               data-agent-id="see-agent-answer-btn"
-              className={`inline-flex h-10 items-center rounded-xl border px-4 text-xs font-medium transition-colors cursor-pointer ${
-                isSpeaking || isLoadingVoice
-                  ? "border-white/[0.3] bg-[#1A1A22] text-[#FAFAFA]"
-                  : "pf-btn-secondary"
-              }`}
+              className={`inline-flex h-10 items-center rounded-xl border px-4 text-xs font-medium transition-colors cursor-pointer ${isSpeaking || isLoadingVoice
+                ? "border-white/[0.3] bg-[#1A1A22] text-[#FAFAFA]"
+                : "pf-btn-secondary"
+                }`}
             >
               {isLoadingVoice
                 ? "Loading answer..."
@@ -668,11 +663,10 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleRecord}
-                  className={`inline-flex h-8 items-center rounded-lg border px-3 text-xs font-medium transition-colors cursor-pointer ${
-                    isRecording
-                      ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
-                      : "pf-btn-secondary"
-                  }`}
+                  className={`inline-flex h-8 items-center rounded-lg border px-3 text-xs font-medium transition-colors cursor-pointer ${isRecording
+                    ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
+                    : "pf-btn-secondary"
+                    }`}
                 >
                   {isRecording ? "Listening..." : "Speak answer"}
                 </button>

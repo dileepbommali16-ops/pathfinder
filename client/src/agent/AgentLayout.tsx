@@ -13,10 +13,22 @@ import {
   CodingStudioActionArgs,
 } from "./codingStudioController";
 import { audioEngine, speaker } from "./audioIO";
-import { CodeTaskPayload, tryExecuteClientAutomationIntent } from "./toolRunner";
+import {
+  CodeTaskPayload,
+  tryExecuteClientAutomationIntent,
+  navigateToBlueprintOnScreen,
+} from "./toolRunner";
 import { API_BASE, getSessionId } from "@/lib/apiClient";
 import { getCareerAgentResponse } from "@/lib/careerAgent";
-import { getUserRole, getHonorificKey, HonorificKey } from "@/lib/auth";
+import {
+  getUserRole,
+  getHonorificKey,
+  getRememberedGuestName,
+  setRememberedGuestName,
+  extractGuestIntroducedName,
+  isPureGuestNameIntroduction,
+  HonorificKey,
+} from "@/lib/auth";
 import { toast } from "sonner";
 import {
   AudioLines,
@@ -59,9 +71,15 @@ function cleanHudReplyText(raw: string): string {
         if (parsed?.type === "NAVIGATE_TAB" && parsed?.target) {
           window.dispatchEvent(new CustomEvent("das-navigate", { detail: { tab: parsed.target } }));
         } else if (parsed?.type === "HIGHLIGHT_PROJECT" && parsed?.target) {
-          window.dispatchEvent(new CustomEvent("das-highlight-project", { detail: { target: parsed.target } }));
+          navigateToBlueprintOnScreen(String(parsed.target));
         } else if (parsed?.type === "OPEN_MODAL" && parsed?.target === "one_page_resume") {
           window.dispatchEvent(new CustomEvent("das-open-resume-builder"));
+        } else if (parsed?.type === "UPDATE_PROFILE" && parsed?.field) {
+          window.dispatchEvent(
+            new CustomEvent("das-update-profile", {
+              detail: { field: parsed.field, value: parsed.value },
+            })
+          );
         }
       } catch {
         // Ignore malformed action tag
@@ -77,10 +95,16 @@ function cleanHudReplyText(raw: string): string {
 }
 
 function getExactHiReply(roleKey: HonorificKey, greetCount: number): string {
-  if (roleKey === "stranger") {
+  if (roleKey === "guest") {
+    const savedName = getRememberedGuestName();
+    if (savedName) {
+      return greetCount <= 0
+        ? `Hi ${savedName}! How can I help you today?`
+        : `Hi ${savedName}, I'm right here!`;
+    }
     return greetCount <= 0
-      ? "Hi stranger, tell your name first!"
-      : "Hi stranger, I'm here — tell me your name first!";
+      ? "Hi! Welcome to Pathfinder! May I know your name?"
+      : "Hi there! Tell me your name once and I'll remember it throughout your session!";
   }
   if (greetCount <= 0) {
     if (roleKey === "madam") return "Hi Madam! What's up?";
@@ -401,8 +425,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const canUseSameOriginEdge =
         typeof window !== "undefined" &&
-        window.location?.protocol?.startsWith("http") &&
-        !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
+        Boolean(window.location?.hostname?.endsWith(".vercel.app"));
 
       const endpoints = [
         ...(canUseSameOriginEdge ? [{ url: "/api/edge-chat", timeoutMs: 9000 }] : []),
@@ -425,7 +448,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       prev === "Hi Sir! What's up?" ||
         prev === "Hi Madam! What's up?" ||
         prev === "Hi Boss! What's up?" ||
-        prev === "Hi stranger, tell your name first!"
+        prev === "Hi! Welcome to Pathfinder! May I know your name?"
         ? getInitialGreeting(activeRole)
         : prev
     );
@@ -513,7 +536,38 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       { role: "user" as const, content: queryText },
     ].slice(-12);
 
-    // Strict deterministic "Hi" rule across 4 roles (pre-warmed WebSocket Puck first, instant REST Puck fallback)
+    // Capture and permanently remember Guest visitor's name on first mention so DAS never asks twice
+    if (getHonorificKey() === "guest") {
+      const awaitingName = /know your name|what(?:'s| is) your name|tell me your name/i.test(
+        latestTranscript
+      );
+      const introduced = extractGuestIntroducedName(queryText, awaitingName);
+      if (introduced) {
+        const savedName = setRememberedGuestName(introduced);
+        if (savedName) {
+          dasSocket.syncGuestName(savedName);
+          ctx = { ...ctx, userName: savedName, guestName: savedName };
+          if (mode === "chat" && isPureGuestNameIntroduction(queryText, savedName)) {
+            cleanup();
+            const welcomeNameReply = `Nice to meet you, ${savedName}! I've saved your name, so I won't ask again. How can I help you explore Pathfinder today?`;
+            chatHistoryRef.current = [
+              ...chatHistoryRef.current,
+              { role: "assistant" as const, content: welcomeNameReply },
+            ].slice(-12);
+            setTranscript(welcomeNameReply);
+            const ttsAc = new AbortController();
+            restTtsAbortRef.current = ttsAc;
+            void audioEngine.speakTextPuckOrLocal(welcomeNameReply, API_BASE, {
+              signal: ttsAc.signal,
+              shouldContinue: () => askCoachNonceRef.current === nonce,
+            });
+            return;
+          }
+        }
+      }
+    }
+
+    // Strict deterministic "Hi" rule across roles (pre-warmed WebSocket Puck first, instant REST Puck fallback)
     if (mode === "chat" && isPureHiGreeting(queryText)) {
       const activeKey = getHonorificKey();
       const exactHi = getExactHiReply(activeKey, hiGreetCountRef.current);

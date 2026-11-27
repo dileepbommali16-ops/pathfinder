@@ -59,15 +59,11 @@ class Settings:
             self.gemini_live_model = "gemini-3.8-live"
         self.ai_daily_budget_per_user: int = int(os.getenv("AI_DAILY_BUDGET", "200"))
 
-        # CORS Origins
+        # CORS Origins (Vercel Frontend + Render Cloud Service)
         frontend_env = os.getenv("FRONTEND_URL", "").strip()
         origins = [
             "https://pathfinder-client-fzom.vercel.app",
         ]
-        if not os.getenv("RENDER") and not os.getenv("VERCEL"):
-            for local_origin in ("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5000", "http://127.0.0.1:5000"):
-                if local_origin not in origins:
-                    origins.append(local_origin)
         if frontend_env:
             import re
             for item in frontend_env.split(","):

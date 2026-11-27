@@ -33,8 +33,8 @@ STANDARD_GREETING_PHRASES = (
     "Hi Madam, I'm here!",
     "Hi Sir! What's up?",
     "Hi Sir, I'm here!",
-    "Hi stranger, tell your name first!",
-    "Hi stranger, I'm here — tell me your name first!",
+    "Hi! Welcome to Pathfinder! May I know your name?",
+    "Hi there! Tell me your name once and I'll remember it throughout your session!",
 )
 
 

@@ -73,7 +73,7 @@ OWNER_PROFILE = {
     ),
 }
 
-# Safe to share with ANY user, including strangers/stakeholders — no private details.
+# Safe to share with ANY user, including visitors/stakeholders — no private details.
 OWNER_PUBLIC_BIO = (
     "Dileep Bommali is the creator of Pathfinder, a B.Tech CSE (Data Science) "
     "student at DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli, "

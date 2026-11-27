@@ -407,7 +407,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(r1["pcm_base64"], "AAAA")
         self.assertEqual(r2["pcm_base64"], "AAAA")
 
-    def test_wav_riff_parser_strips_trailing_c2pa_and_stranger_ws_lock(self):
+    def test_wav_riff_parser_strips_trailing_c2pa_and_guest_ws_lock(self):
         import struct
         import backend.routers.voice_routes as vr
         from backend.agent.live_proxy import get_das_system_instruction
@@ -427,10 +427,13 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertNotIn(b"C2PA", stripped)
         self.assertNotIn(b"SynthID", stripped)
 
-        stranger_prompt = get_das_system_instruction("stranger")
-        self.assertIn("Stranger Mode", stranger_prompt)
-        self.assertIn("Hi stranger, tell your name first!", stranger_prompt)
-        self.assertIn("NEVER call them 'Boss'", stranger_prompt)
+        guest_prompt = get_das_system_instruction("guest")
+        self.assertIn("May I know your name?", guest_prompt)
+        self.assertIn("NEVER call them 'Boss'", guest_prompt)
+
+        named_guest_prompt = get_das_system_instruction("guest", guest_name="Deepika")
+        self.assertIn("Deepika", named_guest_prompt)
+        self.assertIn("NEVER ask for their name again", named_guest_prompt)
 
     def test_on_demand_multiuser_live_proxy_and_wav_fallback(self):
         import inspect
@@ -794,14 +797,27 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertNotIn("What's up", boss_reply)
 
         guest_profile = StudentProfile(name="Guest", branch="CSE", cgpa=7.5, coding_rating=5)
-        stranger_reply = chat_with_mentor(
+        guest_reply = chat_with_mentor(
             message="hi who i m",
             history=[],
             profile=guest_profile,
             active_tab="overview",
-            page_context={"userEmail": "guest@pathfinder.ai", "honorific": "Stranger"},
+            page_context={"userEmail": "guest@pathfinder.ai", "honorific": "Guest"},
         )
-        self.assertIn("Stranger Mode", stranger_reply)
+        self.assertIn("Guest session", guest_reply)
+
+        remembered_reply = chat_with_mentor(
+            message="hi",
+            history=[
+                {"role": "assistant", "content": "Hi! Welcome to Pathfinder! May I know your name?"},
+                {"role": "user", "content": "I am Deepika"},
+            ],
+            profile=guest_profile,
+            active_tab="overview",
+            page_context={"userEmail": "guest@pathfinder.ai", "honorific": "Guest"},
+        )
+        self.assertIn("Deepika", remembered_reply)
+        self.assertNotIn("know your name", remembered_reply.lower())
 
 if __name__ == "__main__":
     unittest.main()

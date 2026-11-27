@@ -278,8 +278,8 @@ def seed_demo_candidate_profile():
 
 
 def populate_cohort_if_empty():
-    """Seeds the SQL database from sample-placement-2024-2026.csv on initial setup."""
-    csv_path = ROOT_DIR / "sample-placement-2024-2026.csv"
+    """Seeds the SQL database from data/placement_records.csv on initial setup."""
+    csv_path = DATA_DIR / "placement_records.csv"
     if not csv_path.exists():
         return
 

@@ -1,13 +1,153 @@
 /**
- * auth.ts - Smart Identity Authorization & Honorific Engine (Boss / Madam / Sir)
+ * auth.ts - Smart Identity Authorization, Guest Memory & Honorific Engine (Boss / Madam / Sir / Guest)
  */
 
-export type HonorificTitle = "Boss" | "Madam" | "Sir" | "Stranger";
-export type HonorificKey = "boss" | "madam" | "sir" | "stranger";
+export type HonorificTitle = "Boss" | "Madam" | "Sir" | "Guest";
+export type HonorificKey = "boss" | "madam" | "sir" | "guest";
 
 // ONLY Dileep's verified primary Google account is recognized as Boss (Owner).
 export const OWNER_EMAIL = "dileepbommali16@gmail.com";
 export const OWNER_EMAILS = [OWNER_EMAIL];
+export const GUEST_NAME_STORAGE_KEY = "das_guest_remembered_name";
+
+const NON_NAME_WORDS = new Set([
+  "hi", "hello", "hey", "hai", "hlo", "yo", "namaste", "namaskaram", "sup", "hola",
+  "yes", "no", "ok", "okay", "sure", "fine", "good", "great", "nice", "awesome",
+  "super", "thanks", "thank", "you", "here", "ready", "asking", "looking", "doing",
+  "studying", "working", "from", "guest", "student", "sample", "candidate", "visitor",
+  "boss", "sir", "madam", "mam", "das", "ai", "pathfinder", "what", "who", "where",
+  "when", "why", "how", "open", "show", "pick", "select", "give", "tell", "help",
+  "project", "projects", "blueprint", "blueprints", "small", "chinna", "code", "coding",
+  "python", "java", "cpp", "resume", "ats", "profile", "settings", "dashboard",
+  "overview", "interview", "viva", "roadmap", "cohort", "analytics", "cgpa", "branch",
+  "boy", "girl", "man", "woman", "male", "female", "nothing", "none", "wait", "stop",
+]);
+
+function normalizeHumanName(raw: string): string {
+  const cleaned = (raw || "")
+    .replace(/[^a-zA-Z\s.'-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return "";
+  const tokens = cleaned
+    .split(" ")
+    .map((t) => t.replace(/^[.'-]+|[.'-]+$/g, ""))
+    .filter(Boolean)
+    .slice(0, 2);
+  if (tokens.length === 0) return "";
+  for (const tok of tokens) {
+    if (tok.length < 2 || tok.length > 22) return "";
+    if (NON_NAME_WORDS.has(tok.toLowerCase())) return "";
+  }
+  return tokens
+    .map((tok) => tok.charAt(0).toUpperCase() + tok.slice(1).toLowerCase())
+    .join(" ");
+}
+
+export function getRememberedGuestName(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const saved = (localStorage.getItem(GUEST_NAME_STORAGE_KEY) || "").trim();
+    if (saved && !/^(guest|guest student|sample student|student|visitor|candidate)$/i.test(saved)) {
+      return saved;
+    }
+  } catch { }
+  return "";
+}
+
+export function setRememberedGuestName(name: string): string {
+  const normalized = normalizeHumanName(name);
+  if (!normalized || typeof window === "undefined") return normalized;
+  try {
+    localStorage.setItem(GUEST_NAME_STORAGE_KEY, normalized);
+    const activeEmail = (localStorage.getItem("userEmail") || "").toLowerCase().trim();
+    if (!activeEmail || activeEmail === "guest@pathfinder.ai" || activeEmail.startsWith("guest@")) {
+      localStorage.setItem("userName", normalized);
+      const pfRaw = localStorage.getItem("pathfinder_user");
+      if (pfRaw) {
+        try {
+          const parsed = JSON.parse(pfRaw);
+          parsed.username = normalized;
+          parsed.guestRememberedName = normalized;
+          localStorage.setItem("pathfinder_user", JSON.stringify(parsed));
+        } catch { }
+      }
+      const prevCtx = (window as any).__DAS_PAGE_CONTEXT__ || {};
+      (window as any).__DAS_PAGE_CONTEXT__ = {
+        ...prevCtx,
+        userName: normalized,
+        guestName: normalized,
+      };
+      window.dispatchEvent(
+        new CustomEvent("das-update-profile", {
+          detail: { field: "fullName", value: normalized, silentToast: true },
+        })
+      );
+      window.dispatchEvent(
+        new CustomEvent("das:guest-name-updated", {
+          detail: { name: normalized },
+        })
+      );
+    }
+  } catch { }
+  return normalized;
+}
+
+export function clearRememberedGuestName(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(GUEST_NAME_STORAGE_KEY);
+  } catch { }
+}
+
+export function extractGuestIntroducedName(
+  rawText: string,
+  awaitingNamePrompt = false
+): string | null {
+  const text = (rawText || "").trim();
+  if (!text) return null;
+
+  const explicitPatterns = [
+    /\b(?:my\s+name\s+is|i\s+am|i'm|im|this\s+is|myself|it's|its|naa?\s+peru|na\s+name|nenu|mera\s+naam|i\s+said(?:\s+you)?|told\s+you(?:\s+i'm|\s+i\s+am)?|cheppanu(?:\s+kadha)?)\s+([a-zA-Z][a-zA-Z.'-]*(?:\s+[a-zA-Z][a-zA-Z.'-]*)?)/i,
+    /^\s*(?:hi+|hello+|hey+|hai+|hlo+|namaste)\s*,?\s*(?:das\s*,?\s*)?(?:i\s+am|i'm|im|my\s+name\s+is|this\s+is|nenu|naa?\s+peru)\s+([a-zA-Z][a-zA-Z.'-]*(?:\s+[a-zA-Z][a-zA-Z.'-]*)?)/i,
+    /\bcall\s+me\s+([a-zA-Z][a-zA-Z.'-]*)\b/i,
+  ];
+
+  for (const rx of explicitPatterns) {
+    const m = text.match(rx);
+    if (m && m[1]) {
+      const candidate = normalizeHumanName(m[1]);
+      if (candidate) return candidate;
+    }
+  }
+
+  if (awaitingNamePrompt) {
+    const stripped = text
+      .replace(/^\s*(?:hi+|hello+|hey+|hai+|hlo+|namaste|it's|its)\s+/i, "")
+      .replace(/\s+(?:here|andi|bro|sir|madam|das)\s*$/i, "")
+      .replace(/[.!,?]+$/g, "")
+      .trim();
+    if (/^[a-zA-Z]{2,20}(?:\s+[a-zA-Z]{2,20})?$/.test(stripped)) {
+      const candidate = normalizeHumanName(stripped);
+      if (candidate) return candidate;
+    }
+  }
+
+  return null;
+}
+
+export function isPureGuestNameIntroduction(rawText: string, extractedName: string): boolean {
+  if (!rawText || !extractedName) return false;
+  const cleaned = rawText.toLowerCase();
+  if (
+    /\b(project|blueprint|small|chinna|code|compile|python|java|resume|ats|jd|cgpa|branch|interview|viva|roadmap|cohort|analytics|open|navigate|scroll|explain|what|how|why|where|which)\b/i.test(
+      cleaned
+    )
+  ) {
+    return false;
+  }
+  return cleaned.split(/\s+/).length <= 9;
+}
 
 export function isGuestAccount(email?: string, username?: string): boolean {
   const e = (email || "").toLowerCase().trim();
@@ -16,7 +156,7 @@ export function isGuestAccount(email?: string, username?: string): boolean {
   if (e === "guest@pathfinder.ai" || e.startsWith("guest@") || e.endsWith("@guest.local")) {
     return true;
   }
-  if (u === "guest student" || u === "guest" || u === "stranger") {
+  if (u === "guest student" || u === "guest") {
     return true;
   }
   return false;
@@ -140,7 +280,7 @@ export function inferHonorific(
   explicitPref?: string
 ): HonorificTitle {
   if (isOwnerAccount(email, username)) return "Boss";
-  if (isGuestAccount(email, username)) return "Stranger";
+  if (isGuestAccount(email, username)) return "Guest";
   if (explicitPref) {
     const norm = explicitPref.toLowerCase().trim();
     if (norm === "madam" || norm === "mam" || norm === "ma'am") return "Madam";
@@ -155,7 +295,7 @@ export function toHonorificKey(title: HonorificTitle | string): HonorificKey {
   if (lower === "boss") return "boss";
   if (lower === "madam" || lower === "mam" || lower === "ma'am") return "madam";
   if (lower === "sir") return "sir";
-  return "stranger";
+  return "guest";
 }
 
 export function getUserRole(email?: string, username?: string): HonorificTitle {
@@ -181,7 +321,7 @@ export function getUserRole(email?: string, username?: string): HonorificTitle {
       "");
 
   if (isOwnerAccount(effectiveEmail)) return "Boss";
-  if (isGuestAccount(effectiveEmail, effectiveName)) return "Stranger";
+  if (isGuestAccount(effectiveEmail, effectiveName)) return "Guest";
 
   if (typeof window !== "undefined") {
     const urlParams = new URLSearchParams(window.location.search);
@@ -207,7 +347,7 @@ export function getHonorificKey(email?: string, username?: string): HonorificKey
 
 export function setHonorificPreference(role: HonorificTitle | "Auto", email?: string): HonorificTitle {
   if (typeof window === "undefined") {
-    return role === "Auto" ? "Stranger" : role;
+    return role === "Auto" ? "Guest" : role;
   }
 
   const activeEmail = email || localStorage.getItem("userEmail") || "";
@@ -221,7 +361,7 @@ export function setHonorificPreference(role: HonorificTitle | "Auto", email?: st
   if (ownerVerified) {
     resolved = "Boss";
   } else if (guestVerified) {
-    resolved = "Stranger";
+    resolved = "Guest";
     if (key) {
       delete overrideMap[key];
       try {
@@ -236,7 +376,7 @@ export function setHonorificPreference(role: HonorificTitle | "Auto", email?: st
       } catch { }
     }
     resolved = inferHonorific(activeEmail, activeName);
-  } else if (role === "Boss" || role === "Stranger") {
+  } else if (role === "Boss" || role === "Guest") {
     // Non-owner signed-in accounts can never escalate to Boss
     resolved = inferHonorific(activeEmail, activeName);
   } else {
@@ -285,6 +425,9 @@ export function handleAuthLoginDetected(
     localStorage.removeItem("das_mode");
     localStorage.removeItem("isOwner");
     localStorage.removeItem("userRole");
+    if (accountChanged && !guestVerified) {
+      clearRememberedGuestName();
+    }
     if (guestVerified) {
       const overrideMap = getOverrideMap();
       delete overrideMap["guest@pathfinder.ai"];
@@ -314,13 +457,16 @@ export function handleAuthLoginDetected(
   const role: HonorificTitle = ownerVerified
     ? "Boss"
     : guestVerified
-      ? "Stranger"
+      ? "Guest"
       : safeExplicit || safeSaved || inferHonorific(effectiveEmail, effectiveName);
+
+  const rememberedGuest = guestVerified ? getRememberedGuestName() : "";
+  const resolvedDisplayName = rememberedGuest || effectiveName;
 
   if (typeof window !== "undefined") {
     if (effectiveEmail) localStorage.setItem("userEmail", effectiveEmail);
     else localStorage.removeItem("userEmail");
-    if (effectiveName) localStorage.setItem("userName", effectiveName);
+    if (resolvedDisplayName) localStorage.setItem("userName", resolvedDisplayName);
     localStorage.setItem("userRole", role);
     localStorage.setItem("isOwner", role === "Boss" ? "true" : "false");
     localStorage.setItem("das_mode", role.toUpperCase());
@@ -335,7 +481,7 @@ export function handleAuthLoginDetected(
 
     window.dispatchEvent(
       new CustomEvent("das:honorific-change", {
-        detail: { role, honorificKey: toHonorificKey(role), email: effectiveEmail, username: effectiveName },
+        detail: { role, honorificKey: toHonorificKey(role), email: effectiveEmail, username: resolvedDisplayName },
       })
     );
   }
@@ -344,7 +490,7 @@ export function handleAuthLoginDetected(
 }
 
 export function initAuthMode(): HonorificTitle {
-  if (typeof window === "undefined") return "Stranger";
+  if (typeof window === "undefined") return "Guest";
 
   const storedEmail = (localStorage.getItem("userEmail") || "").trim();
   const storedName = (localStorage.getItem("userName") || "").trim();
@@ -363,9 +509,9 @@ export function initAuthMode(): HonorificTitle {
     return handleAuthLoginDetected(email, username);
   }
 
-  localStorage.setItem("userRole", "Stranger");
+  localStorage.setItem("userRole", "Guest");
   localStorage.setItem("isOwner", "false");
-  localStorage.setItem("das_mode", "STRANGER");
-  localStorage.setItem("das_honorific_override", "Stranger");
-  return "Stranger";
+  localStorage.setItem("das_mode", "GUEST");
+  localStorage.setItem("das_honorific_override", "Guest");
+  return "Guest";
 }

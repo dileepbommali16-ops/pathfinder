@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { getUserRole } from "@/lib/auth";
+import { getUserRole, getRememberedGuestName } from "@/lib/auth";
 import { AnimatedMetric, SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
 interface HeroMetricsProps {
@@ -31,16 +31,19 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
   const emailNow =
     typeof window !== "undefined" ? localStorage.getItem("userEmail") || undefined : undefined;
   const activeRole = getUserRole(emailNow, username);
+  const rememberedGuest = getRememberedGuestName();
   const isGuest =
     !username ||
     username.toLowerCase().includes("guest") ||
-    activeRole === "Stranger";
+    activeRole === "Guest";
   const resolvedUser =
     activeRole === "Boss"
       ? "Boss"
-      : username && !username.toLowerCase().includes("guest")
-        ? username
-        : activeRole;
+      : rememberedGuest && isGuest
+        ? rememberedGuest
+        : username && !username.toLowerCase().includes("guest")
+          ? username
+          : activeRole;
 
   return (
     <SpotlightSurface className="rounded-2xl p-8 sm:p-12">
@@ -61,7 +64,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             className="text-3xl font-semibold tracking-[-0.035em] text-[#FAFAFA] sm:text-5xl"
             style={{ textWrap: "balance" }}
           >
-            {isGuest ? "Welcome to Pathfinder" : `Welcome back, ${resolvedUser}`}
+            {isGuest && !rememberedGuest ? "Welcome to Pathfinder" : `Welcome back, ${resolvedUser}`}
           </h1>
 
           <p

@@ -1325,8 +1325,7 @@ class AudioEngine {
 
     const canUseSameOriginEdge =
       typeof window !== "undefined" &&
-      window.location?.protocol?.startsWith("http") &&
-      !/^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
+      Boolean(window.location?.hostname?.endsWith(".vercel.app"));
 
     // Always try genuine Gemini 3.8 Live Puck (/api/voice/tts) FIRST so users always hear authentic Puck!
     const ttsEndpoints = [

@@ -1,6 +1,11 @@
 // client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
 import { codingStudioController } from "./codingStudioController";
+import {
+  DEFAULT_PROJECT_CATALOG,
+  findBestMatchingBlueprint,
+  buildProjectExecutionSteps,
+} from "@/data/projectCatalog";
 
 export type VoicePipelineStage = "idle" | "listening" | "thinking" | "speaking" | "interrupted";
 
@@ -203,6 +208,50 @@ const CLIENT_TAB_INTENTS: Array<{ route: string; patterns: RegExp[] }> = [
   },
 ];
 
+export function navigateToBlueprintOnScreen(
+  rawQueryOrId: string,
+  navigateFn?: (path: string) => void
+) {
+  const { project, index } = findBestMatchingBlueprint(rawQueryOrId, DEFAULT_PROJECT_CATALOG);
+  const steps = buildProjectExecutionSteps(project, index);
+  if (typeof window !== "undefined") {
+    (window as any).__DAS_PENDING_PROJECT_HIGHLIGHT__ = {
+      projectId: project.id,
+      query: rawQueryOrId,
+      openGuide: true,
+      ts: Date.now(),
+    };
+  }
+  emitCustomEvent("das-toggle-focus", { focus: false });
+  emitCustomEvent("das-navigate", { tab: "projects", projectId: project.id });
+  goToTab("projects", navigateFn);
+  if (typeof window !== "undefined") {
+    window.setTimeout(() => {
+      emitCustomEvent("das-highlight-project", {
+        projectId: project.id,
+        target: project.id,
+        query: rawQueryOrId,
+        openGuide: true,
+      });
+    }, 120);
+  }
+  return {
+    status: "executed",
+    ok: true,
+    navigated: true,
+    projectId: project.id,
+    blueprintNumber: index,
+    title: project.title,
+    difficulty: project.difficulty,
+    category: project.category || "software",
+    techStack: project.techStack,
+    architectureSummary: project.architectureSummary,
+    resumeBullet: project.resumeBullet,
+    buildSteps: steps,
+    explain: `Navigated to Slide 04 Project Blueprints -> Blueprint #${String(index).padStart(2, "0")}: ${project.title}`,
+  };
+}
+
 export function tryExecuteClientAutomationIntent(
   rawQuery: string,
   navigateFn?: (path: string) => void
@@ -215,6 +264,16 @@ export function tryExecuteClientAutomationIntent(
     emitCustomEvent("das-update-profile", { field: "cgpa", value: val });
     return true;
   }
+  const backlogsMatch = clean.match(/\b(?:set|change|update|make)\s+(?:my\s+)?backlogs?\s+(?:to|as|=)?\s*(\d+)\b/);
+  if (backlogsMatch) {
+    emitCustomEvent("das-update-profile", { field: "backlogs", value: parseInt(backlogsMatch[1], 10) });
+    return true;
+  }
+  const internshipsMatch = clean.match(/\b(?:set|change|update|make)\s+(?:my\s+)?internships?\s+(?:to|as|=)?\s*(\d+)\b/);
+  if (internshipsMatch) {
+    emitCustomEvent("das-update-profile", { field: "internships", value: parseInt(internshipsMatch[1], 10) });
+    return true;
+  }
   const branchMatch = clean.match(
     /\b(?:set|change|update|switch)\s+(?:my\s+)?branch\s+(?:to\s+)?(cse|ece|eee|mech|mechanical|civil|it|aiml|csm|csd|iot|other)\b/
   );
@@ -224,6 +283,46 @@ export function tryExecuteClientAutomationIntent(
     emitCustomEvent("das-update-profile", { field: "branch", value: normalizedBranch });
     return true;
   }
+  if (/\b(?:load|enable|use)\s+(?:sample|demo)\s+profile\b/.test(clean)) {
+    emitCustomEvent("das-demo-profile", { action: "load" });
+    return true;
+  }
+  if (/\b(?:clear|reset)\s+(?:sample|demo)\s+profile\b/.test(clean)) {
+    emitCustomEvent("das-demo-profile", { action: "clear" });
+    return true;
+  }
+  if (/\b(?:open|show|export)\s+(?:one[\s-]?page|1[\s-]?page)\s+resume\b/.test(clean)) {
+    emitCustomEvent("das-open-resume-builder");
+    return true;
+  }
+  if (/\b(?:scroll\s+down|kindaki\s+scroll|kindiki\s+vellu)\b/.test(clean)) {
+    window.scrollBy({ top: window.innerHeight * 0.78, behavior: "smooth" });
+    return true;
+  }
+  if (/\b(?:scroll\s+up|paiki\s+scroll|paiki\s+vellu)\b/.test(clean)) {
+    window.scrollBy({ top: -window.innerHeight * 0.78, behavior: "smooth" });
+    return true;
+  }
+  if (/\b(?:scroll\s+(?:to\s+)?top|top\s+of\s+page|modatiki\s+vellu)\b/.test(clean)) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return true;
+  }
+
+  // Blueprints picker & "take me to that project and explain how to build" intent
+  const isSpecificBlueprintIntent =
+    /\b(?:pick|select|choose|suggest|recommend|give|find|explain|build|chupinchu|ivvu|teesukellu|theesukellu)\b[\s\S]*\b(?:small|chinna|starter|easy|beginner|intermediate|advanced|hardware|iot|rag|graphrag|robotics|solar|drone|bitcoin|satellite|project|blueprint)\b/.test(
+      clean
+    ) ||
+    /\b(?:small|chinna|starter|easy|beginner|rag|graphrag|hardware|iot)\s+(?:project|blueprint)s?\b/.test(
+      clean
+    ) ||
+    /\bblueprint\s*#?\s*\d{1,2}\b/.test(clean);
+
+  if (isSpecificBlueprintIntent) {
+    navigateToBlueprintOnScreen(rawQuery, navigateFn);
+    return true;
+  }
+
   for (const intent of CLIENT_TAB_INTENTS) {
     if (intent.patterns.some((rx) => rx.test(clean))) {
       if (intent.route === "focus_on_das") {
@@ -262,12 +361,31 @@ export const PATHFINDER_TOOLS: { functionDeclarations: FunctionDeclaration[] }[]
       },
       {
         name: "open_blueprint",
-        description: "Opens one of the 23 capstone blueprints (1 to 23).",
+        description: "Opens and scrolls to one of the 28 capstone blueprints (1 to 28) with its 5-step build guide.",
         parameters: {
           type: Type.OBJECT,
-          properties: { blueprintNumber: { type: Type.NUMBER, description: "Blueprint 1 to 23" } },
+          properties: { blueprintNumber: { type: Type.NUMBER, description: "Blueprint 1 to 28" } },
           required: ["blueprintNumber"]
         }
+      },
+      {
+        name: "select_project_blueprint",
+        description:
+          "Picks a matching project from the 28 Project Blueprints (small/starter, intermediate, advanced, software, RAG, hardware, or by branch/topic), navigates to Slide 04 Project Blueprints, scrolls straight to that exact card, and expands its 5-Step Build Guide.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            query: {
+              type: Type.STRING,
+              description: "Search or scope query such as 'small', 'starter', 'rag', 'hardware', 'CSE', or project title/id",
+            },
+            project_id: {
+              type: Type.STRING,
+              description: "Optional exact project blueprint id, e.g. 'proj-sde-1'",
+            },
+          },
+          required: ["query"],
+        },
       },
       {
         name: "list_clickables",
@@ -339,12 +457,12 @@ export function runTool(
 
       case "open_blueprint": {
         const n = Number(args.blueprintNumber);
-        window.dispatchEvent(
-          new CustomEvent("pathfinder:agent-action", { detail: { toolName: name, args } })
-        );
-        const el = findByLabel(`blueprint ${n}`);
-        if (el) realClick(el);
-        return { status: "executed", ok: true, explain: `Opened blueprint ${n}` };
+        return navigateToBlueprintOnScreen(`blueprint ${n}`, navigate);
+      }
+
+      case "select_project_blueprint": {
+        const q = String(args.project_id || args.projectId || args.query || "small");
+        return navigateToBlueprintOnScreen(q, navigate);
       }
 
       case "list_clickables": {

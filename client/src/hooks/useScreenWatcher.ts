@@ -58,14 +58,23 @@ export function useScreenWatcher(activeTab: string = "overview") {
     };
   }, [activeTab]);
 
-  // Idle detection
+  // Throttled idle detection (zero high-frequency mousemove React re-render churn)
   useEffect(() => {
     let timer: number;
+    let lastResetAt = 0;
 
     const resetIdle = () => {
-      setUserState("active");
+      const now = performance.now();
+      if (userStateRef.current !== "active") {
+        userStateRef.current = "active";
+        setUserState("active");
+      } else if (now - lastResetAt < 2500) {
+        return;
+      }
+      lastResetAt = now;
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
+        userStateRef.current = "idle_or_confused";
         setUserState("idle_or_confused");
       }, IDLE_TIMEOUT_MS);
     };

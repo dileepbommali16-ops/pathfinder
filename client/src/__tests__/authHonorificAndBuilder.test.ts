@@ -98,13 +98,13 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(ownerRole).toBe("Boss");
     expect(getUserRole()).toBe("Boss");
 
-    // Switching to Guest after Boss or Madam MUST force Stranger mode and never leak prior session roles
+    // Switching to Guest after Boss or Madam MUST force Guest mode and never leak prior session roles
     localStorage.setItem("das_honorific_override_map", JSON.stringify({ "guest@pathfinder.ai": "Madam" }));
     const guestAfterGirl = handleAuthLoginDetected("guest@pathfinder.ai", "Guest Student");
-    expect(guestAfterGirl).toBe("Stranger");
-    expect(getUserRole()).toBe("Stranger");
-    expect(setHonorificPreference("Boss")).toBe("Stranger");
-    expect(setHonorificPreference("Madam")).toBe("Stranger");
+    expect(guestAfterGirl).toBe("Guest");
+    expect(getUserRole()).toBe("Guest");
+    expect(setHonorificPreference("Boss")).toBe("Guest");
+    expect(setHonorificPreference("Madam")).toBe("Guest");
   });
 
   it("answers builder ecosystem & screen monitor queries offline without Boss leak", () => {
@@ -193,15 +193,16 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
 
   it("permanently removes Sign Up / New Student and blocking OnboardingWizard across all entry flows", () => {
     const srcRoot = path.resolve(__dirname, "..");
-    const lampLoginSrc = fs.readFileSync(path.join(srcRoot, "components/auth/LampLogin.tsx"), "utf-8");
+    const signInSrc = fs.readFileSync(path.join(srcRoot, "components/auth/SignInPage.tsx"), "utf-8");
     const homeSrc = fs.readFileSync(path.join(srcRoot, "pages/Home.tsx"), "utf-8");
     const audioSrc = fs.readFileSync(path.join(srcRoot, "agent/audioIO.ts"), "utf-8");
     const collegeSelectorSrc = fs.readFileSync(path.join(srcRoot, "components/common/CollegeSelector.tsx"), "utf-8");
     const collegesSrc = fs.readFileSync(path.join(srcRoot, "data/colleges.ts"), "utf-8");
     const agentLayoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
 
-    expect(lampLoginSrc).not.toContain("Sign Up / New Student");
-    expect(lampLoginSrc).not.toContain("Start Onboarding");
+    expect(fs.readdirSync(path.join(srcRoot, "components/auth"))).toEqual(["SignInPage.tsx"]);
+    expect(signInSrc).not.toContain("Sign Up / New Student");
+    expect(signInSrc).not.toContain("Start Onboarding");
     expect(homeSrc).not.toContain("<OnboardingWizard");
     expect(homeSrc).not.toContain("buildFreshOnboardingProfile");
     expect(audioSrc).toContain("echoGuardUntilPerfMs");
@@ -213,7 +214,7 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(agentLayoutSrc).not.toContain("📎");
   });
 
-  it("greets Boss, Madam, Sir, and Stranger with exact 1st and 2nd+ replies and avoids co-pilot", () => {
+  it("greets Boss, Madam, Sir, and Guest cleanly, remembers Guest name permanently, and picks real Blueprints", () => {
     handleAuthLoginDetected("dileepbommali16@gmail.com", "Dileep");
     const first = getCareerAgentResponse("hi", [], { branch: "CSE", cgpa: 8.5 }, "Boss");
     expect(first.split("|||")[0]).toBe("Hi Boss! What's up?");
@@ -252,15 +253,42 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     );
     expect(sirSecond.split("|||")[0]).toBe("Hi Sir, I'm here!");
 
-    const strangerFirst = getCareerAgentResponse("hi", [], { branch: "CSE" }, "Stranger");
-    expect(strangerFirst.split("|||")[0]).toBe("Hi stranger, tell your name first!");
-    const strangerSecond = getCareerAgentResponse(
-      "hi baby",
-      [{ role: "user", content: "hi" }, { role: "assistant", content: strangerFirst.split("|||")[0] }],
+    localStorage.removeItem("das_guest_remembered_name");
+    handleAuthLoginDetected("guest@pathfinder.ai", "Guest Student");
+    const guestFirst = getCareerAgentResponse("hi", [], { branch: "CSE" }, "Guest");
+    expect(guestFirst.split("|||")[0]).toBe("Hi! Welcome to Pathfinder! May I know your name?");
+
+    const introTurn = getCareerAgentResponse(
+      "Hi I am Deepika",
+      [{ role: "assistant", content: guestFirst.split("|||")[0] }],
       { branch: "CSE" },
-      "Stranger"
+      "Guest"
     );
-    expect(strangerSecond.split("|||")[0]).toBe("Hi stranger, I'm here — tell me your name first!");
+    expect(introTurn.split("|||")[0]).toContain("Deepika");
+    expect(introTurn.split("|||")[0]).toContain("won't ask again");
+
+    const guestSecondHi = getCareerAgentResponse(
+      "hi",
+      [
+        { role: "assistant", content: guestFirst.split("|||")[0] },
+        { role: "user", content: "Hi I am Deepika" },
+        { role: "assistant", content: introTurn.split("|||")[0] },
+      ],
+      { branch: "CSE" },
+      "Guest"
+    );
+    expect(guestSecondHi.split("|||")[0]).toBe("Hi Deepika, I'm right here!");
+    expect(guestSecondHi.toLowerCase()).not.toContain("know your name");
+
+    const smallProjReply = getCareerAgentResponse(
+      "website blueprints lo oka small project pick chesi ivvu",
+      [],
+      { branch: "CSE" },
+      "Guest"
+    );
+    expect(smallProjReply).toContain("proj-sde-1");
+    expect(smallProjReply).toContain("HIGHLIGHT_PROJECT");
+    expect(smallProjReply).toContain("STEP 01");
 
     const platformOverview = getCareerAgentResponse("what is pathfinder", [], { branch: "CSE" }, "Boss");
     expect(platformOverview.toLowerCase()).not.toContain("co-pilot");
@@ -326,9 +354,9 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(spoken).not.toContain("What's up");
   });
 
-  it("treats Guest and Stranger as placeholder names and preloads Demo Guest Profile cleanly while preserving cleared state", () => {
+  it("treats Guest and Sample Student as placeholder names and preloads Demo Guest Profile cleanly while preserving cleared state", () => {
     expect(isPlaceholderCandidateName("Guest")).toBe(true);
-    expect(isPlaceholderCandidateName("Stranger")).toBe(true);
+    expect(isPlaceholderCandidateName("Sample Student")).toBe(true);
     expect(pickCandidateFullName("Guest", "Priyanka")).toBe("Priyanka");
 
     const demoGuestProfile = buildInitialProfileFromStorage(
@@ -350,10 +378,10 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(isProfileUnconfigured(EMPTY_GUEST_PROFILE)).toBe(true);
   });
 
-  it("enforces P0 docked DAS stage, honest claims, and clean Footer/LampLogin copy", () => {
+  it("enforces P0 docked DAS stage, honest claims, and clean Footer/SignInPage copy", () => {
     const srcRoot = path.resolve(__dirname, "..");
     const footerSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/Footer.tsx"), "utf-8");
-    const loginSrc = fs.readFileSync(path.join(srcRoot, "components/auth/LampLogin.tsx"), "utf-8");
+    const loginSrc = fs.readFileSync(path.join(srcRoot, "components/auth/SignInPage.tsx"), "utf-8");
     const landingSrc = fs.readFileSync(path.join(srcRoot, "components/landing/ComputeLandingPage.tsx"), "utf-8");
     const layoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
     const homeSrc = fs.readFileSync(path.join(srcRoot, "pages/Home.tsx"), "utf-8");
@@ -430,7 +458,8 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(homeSrc).not.toContain("duration: 0.25");
     expect(indexCssSrc).toContain("--text-muted: #8a8a92");
     const apiClientSrc = fs.readFileSync(path.join(srcRoot, "lib/apiClient.js"), "utf-8");
-    expect(apiClientSrc).toContain('host === "localhost" || host === "127.0.0.1"');
+    expect(apiClientSrc).toContain("PROD_BACKEND_URL");
+    expect(apiClientSrc).toContain("https://pathfinder-backend-sg.onrender.com");
   });
 
   it("keeps visible mode badges, Addressing Mode UI, and dead handleRoleToggle out of AgentLayout and ProfileSettings", () => {
@@ -438,7 +467,7 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     const layoutSrc = fs.readFileSync(path.join(srcRoot, "agent/AgentLayout.tsx"), "utf-8");
     const settingsSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/ProfileSettings.tsx"), "utf-8");
 
-    for (const banned of ["Stranger Mode", "Madam Mode", "Sir Mode", "Boss Mode", "handleRoleToggle"]) {
+    for (const banned of ["Guest Mode", "Madam Mode", "Sir Mode", "Boss Mode", "handleRoleToggle"]) {
       expect(layoutSrc).not.toContain(banned);
     }
     expect(settingsSrc).not.toContain("Addressing Mode");

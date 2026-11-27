@@ -83,7 +83,7 @@ pathfinder-main/
 │       ├── audio/                       # Client audio playback & session queue manager
 │       ├── auth/                        # Session state & auth event listeners
 │       ├── components/
-│       │   ├── auth/                    # Interactive login UI (LampLogin)
+│       │   ├── auth/                    # Interactive sign-in UI (SignInPage)
 │       │   ├── common/                  # Shared UI inputs (searchable CollegeSelector)
 │       │   ├── dashboard/               # Core workspaces: HeroMetrics, SkillGapSection, CompanyPlacementRadar,
 │       │   │                            # JDCustomTailor, ResumeStudio, OnePageResumeModal, LiveCodingInterviewArena,

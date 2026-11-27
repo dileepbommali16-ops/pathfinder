@@ -151,15 +151,10 @@ def get_placement_df(force_reload: bool = False) -> pd.DataFrame:
     if _cached_df is not None and not force_reload:
         return _cached_df
 
-    if not CSV_PATH.exists():
-        # Fallback to root sample placement if needed
-        fallback_csv = ROOT_DIR / "sample-placement-2024-2026.csv"
-        if fallback_csv.exists():
-            df = pd.read_csv(fallback_csv)
-        else:
-            df = pd.DataFrame()
-    else:
+    if CSV_PATH.exists():
         df = pd.read_csv(CSV_PATH)
+    else:
+        df = pd.DataFrame()
 
     if not df.empty:
         # Standardize numeric types and labels

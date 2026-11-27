@@ -4,7 +4,7 @@ import { API_BASE, fetchWithTimeout } from "@/lib/apiClient";
 import { PathfinderLogo } from "@/components/common/PathfinderLogo";
 import { ShaderBackdrop, SpotlightSurface } from "@/components/ui/TitaniumPrimitives";
 
-interface LampLoginProps {
+interface SignInPageProps {
   onLogin: (user: {
     username: string;
     email: string;
@@ -33,7 +33,7 @@ const STUDIO_HIGHLIGHTS = [
   },
 ];
 
-export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onBack }) => {
+export const SignInPage: React.FC<SignInPageProps> = ({ onLogin, initialError, onBack }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(initialError || null);
@@ -48,7 +48,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
     }
   }, [initialError]);
 
-  // Wake the (possibly sleeping) Render backend early; fire and forget
+  // Wake the Render backend early; fire and forget
   useEffect(() => {
     fetch(`${API_BASE}/api/health`, { cache: "no-store" }).catch(() => {});
   }, []);
@@ -159,7 +159,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
         )}
       </header>
 
-      {/* Spacious Two-Column Titanium Studio Auth Layout (Zero Videos) */}
+      {/* Spacious Two-Column Titanium Studio Auth Layout */}
       <main className="relative z-10 mx-auto my-auto grid w-full max-w-5xl items-center gap-12 py-10 lg:grid-cols-12 lg:gap-16">
         {/* Left Pitch Column (Desktop) */}
         <div className="hidden flex-col space-y-8 lg:col-span-6 lg:flex">
@@ -204,7 +204,7 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
           className="mx-auto w-full max-w-[440px] lg:col-span-6"
         >
           <SpotlightSurface className="rounded-2xl p-7 sm:p-10">
@@ -372,4 +372,4 @@ export const LampLogin: React.FC<LampLoginProps> = ({ onLogin, initialError, onB
   );
 };
 
-export default LampLogin;
+export default SignInPage;

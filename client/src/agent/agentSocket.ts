@@ -2,13 +2,19 @@ import { audioEngine } from "./audioIO";
 import { codingStudioController } from "./codingStudioController";
 import { API_BASE } from "@/lib/apiClient";
 import {
+  getRememberedGuestName,
+  setRememberedGuestName,
+  extractGuestIntroducedName,
+} from "@/lib/auth";
+import {
   executeWebsiteControl,
   WebsiteControlArgs,
+  navigateToBlueprintOnScreen,
   handleCodeGenerationAndCompiler,
   CodeTaskPayload,
 } from "./toolRunner";
 
-export type UserHonorificRole = "boss" | "sir" | "madam" | "stranger";
+export type UserHonorificRole = "boss" | "sir" | "madam" | "guest";
 
 const GOOGLE_LIVE_WS_URL =
   "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
@@ -26,7 +32,7 @@ class DasAgentSocket {
   private isSpeakingTurn = false;
   private awaitingNextTurn = false;
   public isConnected = false;
-  public currentRole: UserHonorificRole = "stranger";
+  public currentRole: UserHonorificRole = "guest";
 
   public get isSocketConnected(): boolean {
     return this.isConnected && this.ws?.readyState === WebSocket.OPEN;
@@ -65,7 +71,7 @@ class DasAgentSocket {
   }
 
   // Persistent callback storage for auto-reconnection and multi-turn stability
-  private savedRole: UserHonorificRole = "stranger";
+  private savedRole: UserHonorificRole = "guest";
   private savedOnTranscript?: (text: string) => void;
   private savedOnStatusChange?: (connected: boolean) => void;
   private savedNavigateFn?: (path: string) => void;
@@ -214,12 +220,14 @@ class DasAgentSocket {
   private get roleHonorific(): string {
     if (this.savedRole === "madam") return "Madam";
     if (this.savedRole === "sir") return "Sir";
-    if (this.savedRole === "stranger") return "Stranger";
+    if (this.savedRole === "guest") {
+      return getRememberedGuestName() || "there";
+    }
     return "Boss";
   }
 
   public connect(
-    role: UserHonorificRole = "stranger",
+    role: UserHonorificRole = "guest",
     onTranscript?: (text: string) => void,
     onStatusChange?: (connected: boolean) => void,
     navigateFn?: (path: string) => void,
@@ -256,8 +264,10 @@ class DasAgentSocket {
       this.isDirectGoogle = false;
       const storedEmail =
         typeof window !== "undefined" ? localStorage.getItem("userEmail") || "" : "";
+      const guestName = role === "guest" ? getRememberedGuestName() : "";
       const qs = new URLSearchParams({ role });
       if (storedEmail) qs.set("email", storedEmail);
+      if (guestName) qs.set("name", guestName);
       this.ws = new WebSocket(`${RENDER_WS_URL}?${qs.toString()}`);
 
       // Guard against infinite CONNECTING hang during Render cold starts or mobile network handoffs
@@ -303,7 +313,8 @@ class DasAgentSocket {
         return;
       }
 
-      const roleKey = (this.savedRole || "stranger").toLowerCase().trim();
+      const roleKey = (this.savedRole || "guest").toLowerCase().trim();
+      const savedGuestName = roleKey === "guest" ? getRememberedGuestName() : "";
       const identityRole =
         roleKey === "boss"
           ? `You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
@@ -316,10 +327,13 @@ class DasAgentSocket {
 - Always address her respectfully and politely as 'Madam'.
 - ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") reply "Hi Madam! What's up?" (first) or "Hi Madam, I'm here!" (subsequent). If she asks a question after "hi", answer her question directly.
 - If she asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).`
-            : roleKey === "stranger"
-              ? `You are speaking with an unidentified guest visitor.
-- Always treat them as an unidentified stranger until they introduce themselves by name; NEVER call them 'Boss'.
-- ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") reply "Hi stranger, tell your name first!" (first) or "Hi stranger, I'm here — tell me your name first!" (subsequent). If they ask a question after "hi", answer naturally.
+            : roleKey === "guest"
+              ? savedGuestName
+                ? `GUEST NAME MEMORY LOCKED: You are speaking with our guest visitor '${savedGuestName}'.
+- Always address them warmly as '${savedGuestName}' and NEVER ask for their name again! NEVER call them 'Boss'.
+- If they ask 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep."`
+                : `You are speaking with a welcome guest visitor.
+- Greet them warmly and ask their name once if they haven't shared it yet; once they tell you their name, remember it permanently and NEVER ask a second time! NEVER call them 'Boss'.
 - If they ask 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep."`
               : `You are speaking with a male visitor, evaluator, recruiter, or friend.
 - Always address him respectfully and politely as 'Sir'.
@@ -735,6 +749,16 @@ CORE AUTONOMOUS CAPABILITIES:
           if (!this.isSpeakingTurn && this.audioChunksInTurn === 0) {
             this.awaitingNextTurn = true;
           }
+          if (this.savedRole === "guest" && data.finished) {
+            const awaitingName = /know your name|what(?:'s| is) your name|tell me your name/i.test(
+              this.currentAgentTranscript
+            );
+            const detectedName = extractGuestIntroducedName(data.text, awaitingName);
+            if (detectedName) {
+              const saved = setRememberedGuestName(detectedName);
+              if (saved) this.syncGuestName(saved);
+            }
+          }
           this.savedOnUserTranscript?.(data.text);
           return;
         }
@@ -801,6 +825,12 @@ CORE AUTONOMOUS CAPABILITIES:
           if (data.name === "control_website" || data.name === "navigate_ui") {
             executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
             sendToolResult({ ok: true, navigated: true });
+          } else if (data.name === "select_project_blueprint" || data.name === "open_blueprint") {
+            const bpRes = navigateToBlueprintOnScreen(
+              String(args.project_id || args.projectId || args.query || args.blueprintNumber || "small"),
+              this.savedNavigateFn
+            );
+            sendToolResult(bpRes);
           } else if (data.name === "update_student_profile") {
             if (typeof window !== "undefined") {
               window.dispatchEvent(
@@ -924,6 +954,13 @@ CORE AUTONOMOUS CAPABILITIES:
             if (fc.name === "control_website" || fc.name === "navigate_ui") {
               executeWebsiteControl(args as WebsiteControlArgs, this.savedNavigateFn);
               resultMsg = `Navigated website to ${args.route || args.selector}`;
+            } else if (fc.name === "select_project_blueprint" || fc.name === "open_blueprint") {
+              resultMsg = JSON.stringify(
+                navigateToBlueprintOnScreen(
+                  String(args.project_id || args.projectId || args.query || args.blueprintNumber || "small"),
+                  this.savedNavigateFn
+                )
+              );
             } else if (fc.name === "update_student_profile") {
               if (typeof window !== "undefined") {
                 window.dispatchEvent(
@@ -1325,22 +1362,41 @@ CORE AUTONOMOUS CAPABILITIES:
     }
   }
 
+  public syncGuestName(name: string) {
+    const clean = (name || "").trim();
+    if (!clean) return;
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        if (this.isDirectGoogle) {
+          this.sendImmediateText(
+            `SYSTEM MEMORY UPDATE: The guest visitor's name is '${clean}'. Remember it permanently, address them warmly as '${clean}', and NEVER ask for their name again.`
+          );
+        } else {
+          this.ws.send(JSON.stringify({ type: "guest_identity", name: clean }));
+        }
+      } catch { }
+    }
+  }
+
   public switchRole(role: UserHonorificRole) {
     this.currentRole = role;
     this.savedRole = role;
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const savedGuest = role === "guest" ? getRememberedGuestName() : "";
       if (this.isDirectGoogle) {
         this.sendImmediateText(
           role === "boss"
             ? "You are now speaking with your creator Bommali Dileep. Address him warmly as Boss."
             : role === "madam"
               ? "You are now speaking with a lady guest. Address her politely as Madam."
-              : role === "stranger"
-                ? "You are speaking with an unidentified guest visitor. Address them politely as Stranger and ask their name first."
+              : role === "guest"
+                ? savedGuest
+                  ? `You are speaking with guest visitor '${savedGuest}'. Address them warmly as '${savedGuest}' and NEVER ask their name again.`
+                  : "You are speaking with a welcome guest visitor. Ask their name once politely if unknown, then remember it permanently."
                 : "You are now speaking with a gentleman guest. Address him politely as Sir."
         );
       } else {
-        this.ws.send(JSON.stringify({ type: "role_switch", role }));
+        this.ws.send(JSON.stringify({ type: "role_switch", role, name: savedGuest }));
       }
     }
   }

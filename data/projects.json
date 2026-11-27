@@ -4,7 +4,7 @@
     "roleId": "sde",
     "title": "Distributed Asynchronous Job Queue & Rate Limiter",
     "domain": "Backend Systems & Concurrency",
-    "difficulty": "Advanced",
+    "difficulty": "Starter",
     "techStack": [
       "Python",
       "FastAPI",
@@ -29,7 +29,7 @@
     "roleId": "fullstack",
     "title": "Real-Time Collaborative Code & Canvas Studio",
     "domain": "Full-Stack Web & WebSockets",
-    "difficulty": "Advanced",
+    "difficulty": "Intermediate",
     "techStack": [
       "React 19",
       "TypeScript",
@@ -129,7 +129,7 @@
     "roleId": "embedded-iot",
     "title": "Industrial Edge Sensor Telemetry & Anomaly Node",
     "domain": "Embedded Systems & Edge Computing",
-    "difficulty": "Advanced",
+    "difficulty": "Starter",
     "techStack": [
       "Embedded C",
       "FreeRTOS",
@@ -140,12 +140,12 @@
     "overview": "Low-power industrial monitoring device collecting multi-axis vibration and temperature metrics, executing edge threshold filters, and securely transmitting packets to cloud time-series stores.",
     "features": [
       "Preemptive multi-tasking FreeRTOS architecture with sensor collection and network queues",
-      "Power management implementing deep sleep mode with 15\u00b5A quiescent draw",
+      "Power management implementing deep sleep mode with 15µA quiescent draw",
       "Mutual TLS (mTLS) authentication for encrypted MQTT broker communication",
       "Watchdog timer recovery handling intermittent Wi-Fi / sensor dropouts"
     ],
     "architectureSummary": "I2C Vibration Sensor -> ESP32 Microcontroller (FreeRTOS) -> On-chip Edge Filter -> TLS/MQTT Client -> Cloud Broker -> Grafana Dashboard.",
-    "resumeBullet": "Built edge IoT sensor node running FreeRTOS on ESP32 with 15\u00b5A deep sleep consumption, delivering 99.8% telemetry uptime over mTLS to Grafana cloud.",
+    "resumeBullet": "Built edge IoT sensor node running FreeRTOS on ESP32 with 15µA deep sleep consumption, delivering 99.8% telemetry uptime over mTLS to Grafana cloud.",
     "category": "hardware",
     "branch": "ECE / EEE / IoT"
   },
@@ -511,7 +511,7 @@
       "Bluetooth Low Energy (BLE) beacon transmitting automated vibration alerts at 10 ppm threshold"
     ],
     "architectureSummary": "Airborne H2S Gas -> Chemical Paper Matrix (Color Shift) -> ESP32-S3 Optical Chamber -> TinyML Colorimetric Regression Model -> BLE Radio -> Industrial Gateway.",
-    "resumeBullet": "Engineered an intrinsically safe H2S dosimeter wristband combining colorimetric reactive membranes with an ESP32-S3 optical chromaticity engine, measuring toxic exposure from 1-100 ppm with \u00b14% accuracy."
+    "resumeBullet": "Engineered an intrinsically safe H2S dosimeter wristband combining colorimetric reactive membranes with an ESP32-S3 optical chromaticity engine, measuring toxic exposure from 1-100 ppm with ±4% accuracy."
   },
   {
     "id": "pf-ind-020-solar-hybrid-spinning",
@@ -522,7 +522,7 @@
     "title": "High-Efficiency Solar-Hybrid Multi-Spindle Precision Yarn Production System",
     "domain": "Agriculture & Rural Micro-Enterprise",
     "organization": "Renewable Energy Precision Machinery Lab",
-    "difficulty": "Intermediate",
+    "difficulty": "Starter",
     "techStack": [
       "SolidWorks",
       "12V 100W BLDC Motor",
@@ -560,7 +560,7 @@
     ],
     "overview": "Integrated solar-assisted thermal drying chamber with automated humidity-controlled air dampers and an integrated compact vacuum impulse packaging station for rural home-based artisans.",
     "features": [
-      "Parabolic solar air collector generating 45\u00b0C - 60\u00b0C dry air flow without electric heating elements",
+      "Parabolic solar air collector generating 45°C - 60°C dry air flow without electric heating elements",
       "Microcontroller-actuated exhaust servo dampers maintaining optimal 12% moisture equilibrium",
       "Compact automated vacuum pump evacuating oxygen to prevent mold and extend shelf life to 18 months",
       "Impulse heat sealing wire sealing pouches in 2.5 seconds with acoustic completion buzzer"
@@ -594,7 +594,7 @@
       "Solar energy harvester with supercapacitors enabling 5-year maintenance-free autonomous operation"
     ],
     "architectureSummary": "MEMS Tilt + Geophone Sensors -> STM32 Low-Power MCU -> LoRa Transceiver (868MHz) -> Surface Gateway Node -> Cloud Anomaly Model -> Automated Emergency Siren & SMS.",
-    "resumeBullet": "Built a low-cost LoRa geotechnical sensor mesh for underground coal mine monitoring, detecting surface tilt variations down to 0.005\u00b0 and providing automated subsidence alerts 36 hours in advance."
+    "resumeBullet": "Built a low-cost LoRa geotechnical sensor mesh for underground coal mine monitoring, detecting surface tilt variations down to 0.005° and providing automated subsidence alerts 36 hours in advance."
   },
   {
     "id": "pf-ind-026-narcotics-explosives-sniffer",
@@ -691,7 +691,7 @@
     "title": "Sovereign Air-Gapped Local RAG Engine with Quantized Open-Source LLMs",
     "domain": "Air-Gapped Systems & Sovereign AI",
     "organization": "National Cyber Security & Sovereign Systems Lab",
-    "difficulty": "Advanced",
+    "difficulty": "Starter",
     "techStack": [
       "Python 3.11",
       "vLLM / Ollama",
@@ -749,7 +749,7 @@
     "title": "Cross-Lingual Vernacular RAG Pipeline for Public Governance & Healthcare Documents",
     "domain": "Vernacular NLP & Civic Tech Intelligence",
     "organization": "Public Digital Infrastructure & Language AI Lab",
-    "difficulty": "Advanced",
+    "difficulty": "Intermediate",
     "techStack": [
       "Python 3.11",
       "AI4Bharat IndicTrans2",

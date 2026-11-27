@@ -18,20 +18,24 @@ from backend.agent.puck_voice import (
 
 router = APIRouter()
 
-def get_das_system_instruction(role: str) -> str:
+def get_das_system_instruction(role: str, guest_name: str = "") -> str:
     from backend.site_knowledge import get_builder_ecosystem_guide
 
     builder_brief = get_builder_ecosystem_guide()
     extra_platform_rules = (
         "\n\nPATHFINDER 2.0 FULL PLATFORM & NATURAL VOICE AGENT RULES:\n"
-        "1. COMPLETE SLIDE KNOWLEDGE & AUTOMATION: You control ALL 6 active Pathfinder 2.0 slides cleanly via `control_website` / `navigate_ui` / `explain_current_screen`: "
+        "1. COMPLETE SLIDE KNOWLEDGE & AUTOMATION: You control ALL 6 active Pathfinder 2.0 slides cleanly via `control_website`, `select_project_blueprint`, `navigate_ui`, `update_student_profile`, `coding_studio_control`, and `explain_current_screen`: "
         "`overview` (1. Dashboard — Placement Readiness Score %, Target Role Skill Gap Analysis, and Target Company Placement Radar), "
         "`resume` (2. JD & Resume Tailor — 1-Click Company JD Matcher, Missing Keywords, Google X-Y-Z Tailored Summary, ATS Resume Scanner & One-Page PDF export), "
         "`interview` (3. Live Coding & Viva Arena — Split-Screen 11-Language Live Compiler, Complexity Viva, Hiring Committee Verdicts, Company Mock Interview & STAR Project Defense), "
-        "`projects` (4. Project Blueprints — 28 Flagship Portfolio, Industry & RAG Capstone Blueprints with architectures), "
+        "`projects` (4. Project Blueprints — 28 Flagship Portfolio, Starter, Industry & RAG Capstone Blueprints with architectures & 5-step build guides), "
         "`analytics` (5. Cohort & Roadmap — Cohort Placement Statistics across 972 records & 6-Week Strategic Placement Roadmap), "
         "`profile` (6. Profile / Settings — Candidate Academic Marks, CGPA, Branch, Skills, Target Role SSOT), "
         "plus `focus_on_das` / `show_dashboard` (Focus mode toggle) and Compiler Studio (`write_and_compile_code`).\n"
+        "1b. PROJECT BLUEPRINTS PICKER & BUILD GUIDE MANDATE (CRITICAL): "
+        "Whenever ANY user asks to pick, suggest, recommend, show, find, or explain how to build ANY project or blueprint (e.g. 'pick a small project from blueprints', 'chinna project ivvu', 'starter project', 'RAG project', 'hardware project', 'CSE project', or any blueprint title/number), "
+        "ALWAYS call `select_project_blueprint(query=...)` FIRST! That tool automatically switches their screen to Slide 04 Project Blueprints, scrolls straight to that exact card, highlights it, and opens its 5-Step Build Guide on screen. "
+        "Then speak clearly: state the exact Blueprint # and Title you opened on Slide 04, why it fits, the Tech Stack, and walk through how to build it step-by-step (VS Code folders -> backend/core -> frontend/edge -> testing & Vercel/Render deploy)!\n"
         "2. NATURAL CONVERSATIONAL EXPLANATIONS & REAL-TIME MONITORING: "
         "Visitors can be Boss (Bommali Dileep via dileepbommali16@gmail.com ONLY), his friends, classmates, girls, recruiters, or stakeholders at ANY time 24/7. "
         "Monitor `[Live Screen Context: ...]` on every turn so you ALWAYS know which slide they are on, what project card is focused, their account honorific/name, and their questions. "
@@ -49,7 +53,8 @@ def get_das_system_instruction(role: str) -> str:
         "If audio sounded noisy or ambiguous, politely ask the user to repeat. Whenever asked about ANY real-world figure, historical event, or factual topic, call `lookup_factual_info` when helpful to verify facts before speaking.\n\n"
         f"{builder_brief}"
     )
-    role_lower = (role or "stranger").lower().strip()
+    role_lower = (role or "guest").lower().strip()
+    clean_guest_name = (guest_name or "").strip()
     if role_lower == "boss":
         identity_role = """You are speaking directly with your creator, master architect, and owner, Bommali Dileep.
 - Always address him warmly, casually, and loyally as 'Boss' in every single reply.
@@ -81,10 +86,19 @@ def get_das_system_instruction(role: str) -> str:
 - If he asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).
 - COLLEGE NAME & LOCATION MANDATE: Whenever asked about Dileep's college/university or the platform creator's college, ALWAYS state: "DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli." (NEVER say "Dr. RVR & Dr. NRI")."""
     else:
-        identity_role = """You are speaking with an unidentified guest visitor in Stranger Mode.
-- Always treat them as an unknown guest until they introduce themselves by name; NEVER call them 'Boss'.
-- STRICT 'HI' GREETING RULE: ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") with NO question attached: reply "Hi stranger, tell your name first!" on the first, and "Hi stranger, I'm here — tell me your name first!" on subsequent ones. If they ask a real question after "hi" (like "hi who am I"), answer naturally while keeping Boss Mode locked to Dileep.
-- Once they tell you their name, address them politely using their name or Sir/Madam as appropriate while keeping Boss Mode locked strictly to Dileep.
+        if clean_guest_name:
+            identity_role = f"""You are speaking with our guest visitor '{clean_guest_name}'.
+- GUEST NAME MEMORY LOCKED: Their name is '{clean_guest_name}'. Always address them warmly as '{clean_guest_name}' and NEVER ask for their name again under any circumstances! NEVER call them 'Boss'.
+- STRICT 'HI' GREETING RULE: ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") with NO question attached: reply "Hi {clean_guest_name}! How can I help you today?" on the first, and "Hi {clean_guest_name}, I'm right here!" on subsequent ones.
+- ZERO SYCOPHANCY / HONEST REALISM RULE: NEVER blindly agree or give fake compliments! Tell the visitor honestly when their answer, logic, or code has flaws.
+- Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice).
+- If they ask 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).
+- COLLEGE NAME & LOCATION MANDATE: Whenever asked about Dileep's college/university or the platform creator's college, ALWAYS state: "DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli." (NEVER say "Dr. RVR & Dr. NRI")."""
+        else:
+            identity_role = """You are speaking with a welcome guest visitor on Pathfinder 2.0.
+- Greet them warmly and politely; NEVER call them 'Boss'.
+- STRICT 'HI' GREETING RULE: ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") with NO question attached: reply "Hi! Welcome to Pathfinder! May I know your name?" on the first, and "Hi there! Tell me your name once and I'll remember it throughout your session!" if they still haven't shared their name.
+- PERMANENT GUEST NAME MEMORY: The very first time they tell you their name (e.g. "I am Deepika", "My name is Rahul", or just "Deepika"), remember it for the entire session, address them warmly by that name, and NEVER ask for their name a second time!
 - ZERO SYCOPHANCY / HONEST REALISM RULE: NEVER blindly agree or give fake compliments! Tell the visitor honestly when their answer, logic, or code has flaws.
 - Strictly use your natural male 'Puck' voice delivery (NEVER imitate a female voice).
 - If they ask 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).
@@ -137,7 +151,7 @@ CORE AUTONOMOUS CAPABILITIES:
 2. VOICE-ONLY HONESTY, BOSS RECOGNITION & ZERO SYCOPHANCY MANDATE:
    You are a live conversational voice and Pathfinder dashboard assistant (no live camera or webcam video feed exists).
    - STRICTLY NEVER claim, pretend, or guess that you can see the user's face, clothes, hair, hands, or room (NEVER say "I see you", "You're wearing...", etc.).
-   - CREATOR & ROLE IDENTITY: With Boss (dileepbommali16@gmail.com), remain loyal and recognize him warmly (age 20, B.Tech CSE Data Science at DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli, guitarist, ambitious builder). With Madam/Sir/Stranger visitors, answer warmly and respectfully without leaking Boss identity; if anyone asks which college Dileep studies at, proudly say "DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli."
+   - CREATOR & ROLE IDENTITY: With Boss (dileepbommali16@gmail.com), remain loyal and recognize him warmly (age 20, B.Tech CSE Data Science at DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli, guitarist, ambitious builder). With Madam/Sir/Guest visitors, answer warmly and respectfully without leaking Boss identity; if anyone asks which college Dileep studies at, proudly say "DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli."
    - ZERO SYCOPHANCY / BRUTALLY HONEST RULE: NEVER blindly agree ("Yes you're right!", "All correct!") or flatter just to please anyone! Always tell the honest truth calmly and directly if someone's answer, code, claim, or resume bullet is wrong or needs improvement.
 3. BUILT-IN MULTI-LANGUAGE ONLINE CODING COMPILER (C, C++, Python, Java, JS, TS, SQL, Go, Rust, C#, PHP):
    - Use `coding_studio_control` for ALL voice and live coding practice on BOTH Phone & Laptop: open the compiler studio (`open`), switch any language (`switch_language`), write/edit code (`write_code` with mode `'replace'`, `'append'`, `'insert_lines'`, or `'replace_lines'`), read exact code with line numbers (`read_code`), delete all code, line ranges, or specific text (`delete_code`), execute live (`run_code`), stop execution immediately (`stop_code`), inspect/explain terminal output (`get_output`), or close (`close`).
@@ -178,6 +192,24 @@ DAS_TOOLS = [
                         ),
                     },
                     required=["action"],
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="select_project_blueprint",
+                description="Pick a matching project from Pathfinder's 28 official Project Blueprints (e.g. 'small', 'starter', 'easy', 'chinna', 'intermediate', 'advanced', 'RAG', 'GraphRAG', 'hardware', 'IoT', 'robotics', branch name like 'CSE'/'ECE'/'EEE'/'Mech', or project title/number), automatically navigate the user's screen to Slide 04 Project Blueprints, scroll directly to that exact blueprint card, open its 5-Step Build Guide on screen, and return full build steps so you can explain how to build it.",
+                parameters=types.Schema(
+                    type="OBJECT",
+                    properties={
+                        "query": types.Schema(
+                            type="STRING",
+                            description="Scope, category, branch, or project query such as 'small starter project', 'RAG', 'hardware IoT', 'blueprint 1', or project title"
+                        ),
+                        "project_id": types.Schema(
+                            type="STRING",
+                            description="Optional exact blueprint id such as 'proj-sde-1', 'proj-embedded-1', or 'pf-rag-local-sovereign'"
+                        ),
+                    },
+                    required=["query"],
                 ),
             ),
             types.FunctionDeclaration(
@@ -496,9 +528,16 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         return
 
     from backend.owner_profile import is_owner_user
+    from backend.gemini_engine import _extract_remembered_guest_name
 
-    raw_role = str(websocket.query_params.get("role", "stranger")).lower().strip()
+    raw_role = str(websocket.query_params.get("role", "guest")).lower().strip()
     user_email = str(websocket.query_params.get("email", "")).strip().lower()
+    raw_ws_name = str(websocket.query_params.get("name", "")).strip()
+    guest_name = (
+        ""
+        if raw_ws_name.lower() in ("", "guest", "guest student", "sample student", "student", "visitor", "candidate")
+        else raw_ws_name
+    )
     is_owner = is_owner_user(email=user_email)
     is_guest = (
         not user_email
@@ -508,15 +547,15 @@ async def das_multimodal_live_ws(websocket: WebSocket):
     )
     if is_owner:
         user_role = "boss"
-    elif is_guest or raw_role in ("stranger", "guest"):
-        user_role = "stranger"
+    elif is_guest or raw_role == "guest":
+        user_role = "guest"
     elif raw_role in ("madam", "mam", "ma'am"):
         user_role = "madam"
     else:
         user_role = "sir"
 
     config = create_gemini_live_config(
-        system_prompt=get_das_system_instruction(user_role),
+        system_prompt=get_das_system_instruction(user_role, guest_name=guest_name),
         tools_list=DAS_TOOLS,
     )
 
@@ -580,14 +619,38 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         import re as _re_hi
 
         def _honorific_label(r_str: str) -> str:
-            rl = (r_str or "stranger").lower().strip()
+            rl = (r_str or "guest").lower().strip()
             if rl == "boss":
                 return "Boss"
             if rl in ("madam", "mam", "ma'am"):
                 return "Madam"
             if rl == "sir":
                 return "Sir"
-            return "Stranger"
+            return guest_name or "Guest"
+
+        def _maybe_learn_guest_name(user_txt: str, awaiting_prompt: bool = False) -> str:
+            nonlocal guest_name, config
+            if user_role != "guest" or not user_txt:
+                return guest_name
+            fake_hist = (
+                [{"role": "assistant", "content": "May I know your name?"}]
+                if awaiting_prompt
+                else list(fallback_history[-4:])
+            )
+            extracted = _extract_remembered_guest_name(
+                message=user_txt,
+                history=fake_hist,
+                page_context=latest_page_context,
+            )
+            if extracted and extracted != guest_name:
+                guest_name = extracted
+                latest_page_context["userName"] = extracted
+                latest_page_context["guestName"] = extracted
+                config = create_gemini_live_config(
+                    system_prompt=get_das_system_instruction(user_role, guest_name=guest_name),
+                    tools_list=DAS_TOOLS,
+                )
+            return guest_name
 
         def is_pure_hi_greeting(txt: str) -> bool:
             return bool(
@@ -606,22 +669,30 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             )
 
         def get_self_identity_reply(role_str: str) -> str:
-            r_low = (role_str or "stranger").lower().strip()
+            r_low = (role_str or "guest").lower().strip()
             if r_low == "boss":
                 return "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
             if r_low in ("madam", "mam", "ma'am"):
                 return "You're signed in as Madam — welcome to Pathfinder 2.0! How can I help you today?"
             if r_low == "sir":
                 return "You're signed in as Sir — welcome to Pathfinder 2.0! How can I help you today?"
-            return "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+            if guest_name:
+                return f"You're {guest_name}! I remember your name — how can I help you on Pathfinder 2.0 today?"
+            return "You're exploring Pathfinder 2.0 in a Guest session — tell me your name once and I'll remember it!"
 
         def get_exact_hi_reply(role_str: str, count: int) -> str:
-            r_low = (role_str or "stranger").lower().strip()
-            if r_low == "stranger":
+            r_low = (role_str or "guest").lower().strip()
+            if r_low == "guest":
+                if guest_name:
+                    return (
+                        f"Hi {guest_name}! How can I help you today?"
+                        if count == 0
+                        else f"Hi {guest_name}, I'm right here!"
+                    )
                 return (
-                    "Hi stranger, tell your name first!"
+                    "Hi! Welcome to Pathfinder! May I know your name?"
                     if count == 0
-                    else "Hi stranger, I'm here — tell me your name first!"
+                    else "Hi there! Tell me your name once and I'll remember it throughout your session!"
                 )
             if count == 0:
                 if r_low == "boss":
@@ -804,6 +875,86 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     ),
                 }
 
+            if fc_name == "select_project_blueprint":
+                from backend.data_service import get_projects
+                projects = get_projects()
+                q_raw = str(args.get("project_id") or args.get("query") or "small").strip()
+                q_low = q_raw.lower()
+                picked_idx = 0
+                for idx_p, p_item in enumerate(projects):
+                    if p_item.get("id", "").lower() == q_low or str(p_item.get("psCode") or "").lower() == q_low:
+                        picked_idx = idx_p
+                        break
+                else:
+                    num_m = _re_hi.search(r"(?:blueprint|project|#)\s*#?\s*(\d{1,2})\b", q_low)
+                    if num_m and 1 <= int(num_m.group(1)) <= len(projects):
+                        picked_idx = int(num_m.group(1)) - 1
+                    elif any(w in q_low for w in ("small", "chinna", "starter", "beginner", "easy", "simple", "mini")):
+                        want_hw = any(w in q_low for w in ("hardware", "iot", "esp32", "sensor", "ece", "eee", "mech", "solar"))
+                        want_rag = any(w in q_low for w in ("rag", "llm", "genai", "aiml"))
+                        target_id = (
+                            "pf-ind-020-solar-hybrid-spinning"
+                            if ("solar" in q_low or "mech" in q_low)
+                            else "proj-embedded-1"
+                            if want_hw
+                            else "pf-rag-local-sovereign"
+                            if want_rag
+                            else "proj-sde-1"
+                        )
+                        for idx_p, p_item in enumerate(projects):
+                            if p_item.get("id") == target_id:
+                                picked_idx = idx_p
+                                break
+                    else:
+                        best_sc = -1
+                        toks = [t for t in _re_hi.findall(r"[a-z0-9+#-]+", q_low) if len(t) >= 2]
+                        for idx_p, p_item in enumerate(projects):
+                            sc_val = 0
+                            blob = " ".join([
+                                str(p_item.get("title") or ""),
+                                str(p_item.get("domain") or ""),
+                                str(p_item.get("branch") or ""),
+                                str(p_item.get("category") or ""),
+                                " ".join(p_item.get("techStack") or []),
+                            ]).lower()
+                            for t in toks:
+                                if t in blob:
+                                    sc_val += 5
+                            if sc_val > best_sc:
+                                best_sc = sc_val
+                                picked_idx = idx_p
+
+                picked_proj = projects[picked_idx] if projects else {}
+                bp_num = picked_idx + 1
+                if websocket.client_state != WebSocketState.DISCONNECTED:
+                    await websocket.send_json({
+                        "type": "tool_call",
+                        "name": "select_project_blueprint",
+                        "args": {
+                            "project_id": picked_proj.get("id", "proj-sde-1"),
+                            "query": q_raw,
+                        },
+                    })
+                return {
+                    "status": "executed_on_client",
+                    "ok": True,
+                    "navigated_to": f"Slide 04 · Project Blueprints -> Blueprint #{bp_num:02d}",
+                    "blueprint_number": bp_num,
+                    "project_id": picked_proj.get("id"),
+                    "title": picked_proj.get("title"),
+                    "difficulty": picked_proj.get("difficulty"),
+                    "category": picked_proj.get("category"),
+                    "tech_stack": picked_proj.get("techStack"),
+                    "architecture": picked_proj.get("architectureSummary"),
+                    "features": picked_proj.get("features"),
+                    "resume_bullet": picked_proj.get("resumeBullet"),
+                    "instruction": (
+                        f"Tell the user you just opened Slide 04 Project Blueprints and scrolled directly to Blueprint #{bp_num:02d}: "
+                        f"'{picked_proj.get('title')}' with its 5-Step Build Guide open on screen. Then walk them concisely through "
+                        f"how to build it step-by-step (1. VS Code setup & stack, 2. core pipeline, 3. features & testing, 4. deploy on Vercel & Render)."
+                    ),
+                }
+
             if fc_name in (
                 "control_website",
                 "navigate_ui",
@@ -829,12 +980,15 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             extra_instruction: str = "",
         ) -> str:
             """Executes up to 3 tool-calling rounds via Gemini REST so UI clicks and Coding Studio work even in fallback mode."""
-            sys_prompt = get_das_system_instruction(user_role)
+            sys_prompt = get_das_system_instruction(user_role, guest_name=guest_name)
             hon_lbl = _honorific_label(user_role)
             if hon_lbl == "Boss":
                 hon_rule = "CRITICAL ADDRESSING RULE: You are speaking with Boss (dileepbommali16@gmail.com). Address him warmly as 'Boss'."
-            elif hon_lbl == "Stranger":
-                hon_rule = "CRITICAL ADDRESSING RULE: You are speaking with an unknown visitor, NOT Boss. Strictly address them ONLY as 'Stranger' until they share their name. NEVER call them 'Boss'!"
+            elif user_role == "guest":
+                if guest_name:
+                    hon_rule = f"CRITICAL ADDRESSING RULE: This guest visitor's name is '{guest_name}'. Address them warmly as '{guest_name}' and NEVER ask for their name again! NEVER call them 'Boss'!"
+                else:
+                    hon_rule = "CRITICAL ADDRESSING RULE: You are speaking with a welcome guest visitor. Ask their name once politely if unknown; once shared, remember it permanently and NEVER ask again. NEVER call them 'Boss'!"
             else:
                 hon_rule = f"CRITICAL ADDRESSING RULE: You are speaking with a visitor, NOT Boss Dileep. Strictly address them ONLY as '{hon_lbl}'. NEVER call them 'Boss'!"
             sys_prompt = f"{sys_prompt}\n\n{hon_rule}"
@@ -1619,6 +1773,32 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         ctx_data = msg.get("context")
                         if isinstance(ctx_data, dict):
                             latest_page_context = ctx_data
+                            ctx_nm = str(ctx_data.get("guestName") or ctx_data.get("userName") or "").strip()
+                            if user_role == "guest" and ctx_nm and ctx_nm.lower() not in ("guest", "guest student", "sample student", "student", "visitor", "candidate"):
+                                _maybe_learn_guest_name(f"my name is {ctx_nm}")
+
+                    elif msg_type == "guest_identity":
+                        g_nm = str(msg.get("name") or "").strip()
+                        if user_role == "guest" and g_nm:
+                            learned = _maybe_learn_guest_name(f"my name is {g_nm}")
+                            if learned and session is not None and not is_gemini_ws_closed(session):
+                                try:
+                                    async with send_lock:
+                                        await session.send_client_content(
+                                            turns=[
+                                                types.Content(
+                                                    parts=[
+                                                        types.Part.from_text(
+                                                            text=f"SYSTEM MEMORY LOCK: The guest visitor's name is '{learned}'. Remember it permanently, address them warmly as '{learned}', and NEVER ask for their name again."
+                                                        )
+                                                    ],
+                                                    role="user",
+                                                )
+                                            ],
+                                            turn_complete=False,
+                                        )
+                                except Exception:
+                                    pass
 
                     # 3a-ter. Friendly Audio / Earphone Low-Volume / Muted Accessory Coaching
                     elif msg_type == "friendly_audio_hint":
@@ -1648,6 +1828,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 active_turn_task.cancel()
                             if active_watchdog_task and not active_watchdog_task.done():
                                 active_watchdog_task.cancel()
+                            if user_role == "guest":
+                                _maybe_learn_guest_name(text, awaiting_prompt=hi_greeting_count > 0)
                             if is_pure_hi_greeting(text):
                                 t_turn = asyncio.create_task(_handle_hi_turn(req_client_turn_id))
                             elif is_self_identity_query(text):
@@ -1674,20 +1856,23 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             fallback_tasks.add(t_v)
                             t_v.add_done_callback(fallback_tasks.discard)
 
-                    # 5. Role Switch (enforces strict Boss lock for owner email only, Stranger lock for guests)
+                    # 5. Role Switch (enforces strict Boss lock for owner email only, Guest mode with persistent name memory)
                     elif msg_type == "role_switch":
-                        req_role = str(msg.get("role", "stranger")).lower().strip()
+                        req_role = str(msg.get("role", "guest")).lower().strip()
+                        req_name = str(msg.get("name", "")).strip()
                         if is_owner:
                             new_role = "boss"
-                        elif is_guest or req_role in ("stranger", "guest"):
-                            new_role = "stranger"
+                        elif is_guest or req_role == "guest":
+                            new_role = "guest"
                         elif req_role in ("madam", "mam", "ma'am"):
                             new_role = "madam"
                         else:
                             new_role = "sir"
                         user_role = new_role
+                        if new_role == "guest" and req_name and req_name.lower() not in ("guest", "guest student", "sample student", "student", "visitor"):
+                            guest_name = req_name
                         config = create_gemini_live_config(
-                            system_prompt=get_das_system_instruction(user_role),
+                            system_prompt=get_das_system_instruction(user_role, guest_name=guest_name),
                             tools_list=DAS_TOOLS,
                         )
                         if session is not None and not is_gemini_ws_closed(session):
@@ -1695,8 +1880,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 update_msg = "SYSTEM: You are speaking with your creator and owner Bommali Dileep. Address him as Boss."
                             elif new_role == "madam":
                                 update_msg = "SYSTEM: You are speaking with a lady guest/evaluator. Address her politely as Madam."
-                            elif new_role == "stranger":
-                                update_msg = "SYSTEM: You are speaking with an unidentified guest visitor. Address them politely as Stranger and ask for their name first."
+                            elif new_role == "guest":
+                                update_msg = (
+                                    f"SYSTEM: The guest visitor's name is '{guest_name}'. Address them warmly as '{guest_name}' and NEVER ask their name again."
+                                    if guest_name
+                                    else "SYSTEM: You are speaking with a welcome guest visitor. Ask their name once politely if unknown, then remember it permanently."
+                                )
                             else:
                                 update_msg = "SYSTEM: You are speaking with a gentleman guest/evaluator. Address him politely as Sir."
                             try:
@@ -1812,6 +2001,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             sc = response.server_content
                             input_tx = getattr(sc, "input_transcription", None)
                             if input_tx and getattr(input_tx, "text", None):
+                                if user_role == "guest" and getattr(input_tx, "finished", False):
+                                    _maybe_learn_guest_name(input_tx.text, awaiting_prompt=True)
                                 if websocket.client_state != WebSocketState.DISCONNECTED:
                                     await websocket.send_json({
                                         "type": "user_transcript",

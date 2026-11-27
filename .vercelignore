@@ -34,4 +34,3 @@ scripts/test*.ts
 *.log
 *.sqlite
 *.db
-sample-placement-2024-2026.csv

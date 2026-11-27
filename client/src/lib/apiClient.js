@@ -10,12 +10,9 @@ export const PROD_BACKEND_URL = "https://pathfinder-backend-sg.onrender.com";
 
 export const getApiBase = () => {
   if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") {
-      return window.location.origin;
-    }
     const envUrl = import.meta.env.VITE_API_BASE_URL;
     if (envUrl && envUrl.trim()) return envUrl.replace(/\/+$/, "");
+    const host = window.location.hostname;
     if (host.includes("onrender.com")) {
       return window.location.origin;
     }
@@ -64,8 +61,8 @@ function computeEdgePrediction(body = {}) {
     chance >= 75
       ? "Strong Candidate Profile"
       : chance >= 55
-      ? "Solid Foundation"
-      : "Needs Focus & Acceleration";
+        ? "Solid Foundation"
+        : "Needs Focus & Acceleration";
 
   const strengths = [
     `High Academic Distinction (CGPA ${cgpa.toFixed(1)}/10)`,
@@ -154,7 +151,7 @@ async function handleAutonomousEdgeRequest(urlStr, options = {}) {
     try {
       const raw = localStorage.getItem("pathfinder_user");
       if (raw) savedUser = JSON.parse(raw);
-    } catch {}
+    } catch { }
     return createJsonResponse(savedUser, 200);
   }
 
@@ -162,13 +159,13 @@ async function handleAutonomousEdgeRequest(urlStr, options = {}) {
     if ((options.method || "GET").toUpperCase() === "POST") {
       try {
         localStorage.setItem("pathfinder_backend_profile", JSON.stringify(bodyObj));
-      } catch {}
+      } catch { }
       return createJsonResponse({ status: "saved", profile: bodyObj }, 200);
     }
     try {
       const saved = localStorage.getItem("pathfinder_backend_profile");
       if (saved) return createJsonResponse(JSON.parse(saved), 200);
-    } catch {}
+    } catch { }
     return createJsonResponse({}, 200);
   }
 

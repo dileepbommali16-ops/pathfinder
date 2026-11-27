@@ -289,13 +289,15 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     {canSelectBossMode
                       ? "Bommali Dileep"
                       : isGuestAccount(resolvedEmail, formData.fullName)
-                        ? "Guest Session"
+                        ? formData.fullName && !/^(guest|guest student|sample student)$/i.test(formData.fullName)
+                          ? formData.fullName
+                          : "Guest Session"
                         : formData.fullName || "Signed-In Candidate"}
                   </span>
                   {resolvedEmail && (
                     <span className="ml-2 font-mono text-[11px] text-[#8A8A92]">
                       {isGuestAccount(resolvedEmail, formData.fullName)
-                        ? "Local Workspace"
+                        ? "Cloud Guest Session"
                         : resolvedEmail}
                     </span>
                   )}

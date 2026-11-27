@@ -261,16 +261,98 @@ def _is_guest_identity(email: Optional[str] = None, username: Optional[str] = No
     u = (username or "").strip().lower()
     if not e or e == "guest@pathfinder.ai" or e.startswith("guest@") or e.endswith("@guest.local"):
         return True
-    if u in ("guest student", "guest", "stranger"):
+    if u in ("guest student", "guest"):
         return True
     return False
+
+
+_GUEST_NON_NAMES = {
+    "hi", "hello", "hey", "hai", "hlo", "yo", "namaste", "namaskaram",
+    "yes", "no", "ok", "okay", "sure", "fine", "good", "great", "nice",
+    "thanks", "thank", "here", "ready", "asking", "looking", "doing",
+    "studying", "working", "from", "guest", "student", "sample", "candidate",
+    "visitor", "boss", "sir", "madam", "mam", "das", "ai", "pathfinder",
+    "what", "who", "where", "when", "why", "how", "open", "show", "pick",
+    "project", "projects", "blueprint", "blueprints", "small", "chinna",
+    "code", "python", "java", "resume", "profile", "dashboard", "overview",
+}
+
+
+def _extract_remembered_guest_name(
+    message: str = "",
+    history: Optional[List[Any]] = None,
+    profile: Optional[Any] = None,
+    page_context: Optional[Dict[str, Any]] = None,
+) -> str:
+    ctx = page_context if isinstance(page_context, dict) else {}
+    p_dict: Dict[str, Any] = {}
+    if profile is not None:
+        if hasattr(profile, "model_dump"):
+            p_dict = profile.model_dump()
+        elif isinstance(profile, dict):
+            p_dict = profile
+        else:
+            raw_d = getattr(profile, "__dict__", {})
+            p_dict = raw_d if isinstance(raw_d, dict) else {}
+
+    for cand in (
+        ctx.get("guestName"),
+        ctx.get("userName"),
+        p_dict.get("full_name"),
+        p_dict.get("fullName"),
+        p_dict.get("name"),
+        p_dict.get("username"),
+    ):
+        s = str(cand or "").strip()
+        if s and not re.match(
+            r"^(guest|guest student|sample student|student|student candidate|candidate|visitor|user)$",
+            s,
+            re.IGNORECASE,
+        ):
+            return s
+
+    intro_rx = re.compile(
+        r"\b(?:my\s+name\s+is|i\s+am|i'm|im|this\s+is|myself|naa?\s+peru|na\s+name|nenu|mera\s+naam|i\s+said(?:\s+you)?|told\s+you)\s+([A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*)?)",
+        re.IGNORECASE,
+    )
+    user_turns: List[str] = []
+    last_assistant_asked_name = False
+    if history:
+        for h in history:
+            h_role = getattr(h, "role", None) or (h.get("role") if isinstance(h, dict) else "")
+            h_txt = str(getattr(h, "content", None) or (h.get("content") if isinstance(h, dict) else "") or "").strip()
+            if h_role == "user" and h_txt:
+                user_turns.append(h_txt)
+            elif h_role in ("assistant", "model") and h_txt:
+                last_assistant_asked_name = bool(
+                    re.search(r"know your name|what(?:'s| is) your name|tell me your name", h_txt, re.IGNORECASE)
+                )
+    if message:
+        user_turns.append(message.strip())
+
+    for txt in reversed(user_turns):
+        m = intro_rx.search(txt)
+        if m:
+            tokens = [t.strip(".'-") for t in m.group(1).split() if t.strip(".'-")][:2]
+            if tokens and all(2 <= len(t) <= 22 and t.lower() not in _GUEST_NON_NAMES for t in tokens):
+                return " ".join(t.capitalize() for t in tokens)
+
+    if last_assistant_asked_name and message:
+        solo = re.sub(r"^\s*(?:hi+|hello+|hey+)\s+", "", message.strip(), flags=re.IGNORECASE)
+        solo = re.sub(r"[.!,?]+$", "", solo).strip()
+        if re.match(r"^[A-Za-z]{2,20}(?:\s+[A-Za-z]{2,20})?$", solo):
+            tokens = solo.split()[:2]
+            if all(t.lower() not in _GUEST_NON_NAMES for t in tokens):
+                return " ".join(t.capitalize() for t in tokens)
+
+    return ""
 
 
 def _resolve_verified_honorific(
     profile: Optional[Any] = None,
     page_context: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """Resolve honorific strictly: Boss ONLY for owner, Stranger for guests, else Madam/Sir."""
+    """Resolve honorific strictly: Boss ONLY for owner, Guest for guest sessions, else Madam/Sir."""
     ctx = page_context if isinstance(page_context, dict) else {}
     p_dict: Dict[str, Any] = {}
     if profile is not None:
@@ -289,15 +371,15 @@ def _resolve_verified_honorific(
 
     raw_hon = str(ctx.get("honorific") or "").strip().lower()
     if user_email and _is_guest_identity(user_email, user_name):
-        return "Stranger"
+        return "Guest"
     if not user_email:
         if raw_hon in ("madam", "mam", "ma'am", "female"):
             return "Madam"
         if raw_hon == "sir":
             return "Sir"
-        return "Stranger"
-    if raw_hon in ("stranger", "guest"):
-        return "Stranger"
+        return "Guest"
+    if raw_hon == "guest":
+        return "Guest"
     if raw_hon in ("madam", "mam", "ma'am", "female"):
         return "Madam"
     return "Sir"
@@ -798,6 +880,12 @@ def generate_smart_fallback_reply(
             f"\"{clean_msg[:80]}\" in offline mode — please resend once in a moment so I can answer accurately from live knowledge!"
         )
 
+    remembered_guest_name = (
+        _extract_remembered_guest_name(clean_msg, history, profile, page_context)
+        if honorific_fallback == "Guest"
+        else ""
+    )
+
     is_greeting_only = bool(
         re.match(
             r"^\s*(hi+|hello+|hey+|namaste|good\s*(?:morning|afternoon|evening)|yo+|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$",
@@ -806,11 +894,17 @@ def generate_smart_fallback_reply(
     )
     if is_greeting_only:
         prior_greeted = bool(history and len(history) > 0)
-        if honorific_fallback == "Stranger":
+        if honorific_fallback == "Guest":
+            if remembered_guest_name:
+                return (
+                    f"Hi {remembered_guest_name}, I'm right here!"
+                    if prior_greeted
+                    else f"Hi {remembered_guest_name}! How can I help you today?"
+                )
             return (
-                "Hi stranger, I'm here — tell me your name first!"
+                "Hi there! Tell me your name once and I'll remember it throughout your session!"
                 if prior_greeted
-                else "Hi stranger, tell your name first!"
+                else "Hi! Welcome to Pathfinder! May I know your name?"
             )
         if prior_greeted:
             return f"Hi {honorific_fallback}, I'm here!"
@@ -822,8 +916,10 @@ def generate_smart_fallback_reply(
     ):
         if honorific_fallback == "Boss":
             return "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
-        if honorific_fallback == "Stranger":
-            return "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+        if honorific_fallback == "Guest":
+            if remembered_guest_name:
+                return f"You're {remembered_guest_name}! I remember your name — how can I help you on Pathfinder 2.0 today?"
+            return "You're exploring Pathfinder 2.0 in a Guest session — tell me your name once and I'll remember it!"
         if p_name and p_name.lower() != "student":
             return f"You're {p_name}, signed in as {honorific_fallback} on Pathfinder 2.0!"
         return f"You're signed in as {honorific_fallback} on Pathfinder 2.0! How can I help you today?"
@@ -924,7 +1020,12 @@ SAVED CANDIDATE PROFILE:
         sys_instruction += f"\n\n{profile_ctx}"
     verified_honorific = _resolve_verified_honorific(profile, page_context)
     ctx_dict = page_context if isinstance(page_context, dict) else {}
-    live_user_name = str(ctx_dict.get("userName") or "").strip()
+    remembered_guest = (
+        _extract_remembered_guest_name(clean_msg, history, profile, page_context)
+        if verified_honorific == "Guest"
+        else ""
+    )
+    live_user_name = remembered_guest or str(ctx_dict.get("userName") or "").strip()
     live_user_email = str(ctx_dict.get("userEmail") or "").strip()
     live_slide = str(ctx_dict.get("slideLabel") or ctx_dict.get("activeSlide") or active_tab or "dashboard").strip()
     live_proj = str(ctx_dict.get("activeProject") or ctx_dict.get("projectTitle") or ctx_dict.get("cardContext") or "").strip()
@@ -937,8 +1038,17 @@ SAVED CANDIDATE PROFILE:
         sys_instruction += "\nADDRESSING RULE: You are speaking with your Creator & Primary Owner (Dileep, dileepbommali16@gmail.com). Always address him warmly and respectfully as 'Boss'."
     elif verified_honorific == "Madam":
         sys_instruction += "\nADDRESSING RULE: You are speaking with a respected female user/candidate. Always address her politely as 'Madam' (NEVER call her Boss)."
-    elif verified_honorific == "Stranger":
-        sys_instruction += "\nADDRESSING RULE: You are speaking with an unidentified guest visitor. Address them politely as 'Stranger' and ask for their name first until they introduce themselves (NEVER call them Boss — ONLY dileepbommali16@gmail.com is Boss)."
+    elif verified_honorific == "Guest":
+        if remembered_guest:
+            sys_instruction += (
+                f"\nADDRESSING RULE (GUEST MEMORY LOCKED): This guest visitor's name is '{remembered_guest}'. "
+                f"Address them warmly as '{remembered_guest}' and NEVER ask for their name a second time! (NEVER call them Boss — ONLY dileepbommali16@gmail.com is Boss)."
+            )
+        else:
+            sys_instruction += (
+                "\nADDRESSING RULE: You are speaking with a welcome guest visitor. Politely ask their name once if they haven't introduced themselves yet; "
+                "once they tell you their name, remember it permanently and NEVER ask again (NEVER call them Boss — ONLY dileepbommali16@gmail.com is Boss)."
+            )
     else:
         sys_instruction += "\nADDRESSING RULE: You are speaking with a respected guest/candidate. Always address them respectfully as 'Sir' (NEVER call them Boss — ONLY dileepbommali16@gmail.com is Boss)."
 
@@ -1115,19 +1225,27 @@ def chat_with_mentor(
             return empty_text, {"prep_ms": 0.0, "gemini_call_ms": 0.0, "novelty_ms": 0.0, "model_used": "none"}
         return empty_text
 
-    # Strict deterministic 4-role Hi greetings (Boss / Madam / Sir / Stranger)
+    # Strict deterministic 4-role Hi greetings (Boss / Madam / Sir / Guest with remembered name)
     if re.match(
         r"^\s*(hi+|hello+|hey+|namaste|good\s*(?:morning|afternoon|evening)|yo+|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$",
         clean_msg.lower(),
     ):
         hon_now = _resolve_verified_honorific(profile, page_context)
         has_prior = bool(history and len(history) > 0)
-        if hon_now == "Stranger":
-            hi_reply = (
-                "Hi stranger, I'm here — tell me your name first!"
-                if has_prior
-                else "Hi stranger, tell your name first!"
-            )
+        if hon_now == "Guest":
+            guest_nm = _extract_remembered_guest_name(clean_msg, history, profile, page_context)
+            if guest_nm:
+                hi_reply = (
+                    f"Hi {guest_nm}, I'm right here!"
+                    if has_prior
+                    else f"Hi {guest_nm}! How can I help you today?"
+                )
+            else:
+                hi_reply = (
+                    "Hi there! Tell me your name once and I'll remember it throughout your session!"
+                    if has_prior
+                    else "Hi! Welcome to Pathfinder! May I know your name?"
+                )
         elif has_prior:
             hi_reply = f"Hi {hon_now}, I'm here!"
         else:
@@ -1144,8 +1262,12 @@ def chat_with_mentor(
         cand_name = (getattr(profile, "name", None) or "").strip() if profile else ""
         if hon_now == "Boss":
             id_reply = "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
-        elif hon_now == "Stranger":
-            id_reply = "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+        elif hon_now == "Guest":
+            guest_nm = _extract_remembered_guest_name(clean_msg, history, profile, page_context)
+            if guest_nm:
+                id_reply = f"You're {guest_nm}! I remember your name — how can I help you on Pathfinder 2.0 today?"
+            else:
+                id_reply = "You're exploring Pathfinder 2.0 in a Guest session — tell me your name once and I'll remember it!"
         elif cand_name and cand_name.lower() != "student":
             id_reply = f"You're {cand_name}, signed in as {hon_now} on Pathfinder 2.0!"
         else:

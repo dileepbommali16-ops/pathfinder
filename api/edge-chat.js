@@ -39,6 +39,46 @@ function getKeyCandidates() {
   return [...healthy, ...cooled.map((x) => x.k)];
 }
 
+function extractGuestName(message = "", history = [], pageContext = {}, profile = {}) {
+  const candidates = [
+    pageContext?.guestName,
+    pageContext?.userName,
+    profile?.fullName,
+    profile?.name,
+  ];
+  for (const c of candidates) {
+    const s = String(c || "").trim();
+    if (s && !/^(guest|guest student|student|student candidate|sample student|visitor|candidate|user)$/i.test(s)) {
+      return s;
+    }
+  }
+  const introRx = /\b(?:my\s+name\s+is|i\s+am|i'm|im|this\s+is|call\s+me|myself|naa?\s+peru|na\s+name|nenu|mera\s+naam|i\s+said(?:\s+you)?)\s+([a-zA-Z][a-zA-Z\s]{1,24})\b/i;
+  const allUserTexts = [
+    ...history.filter((t) => t?.role === "user").map((t) => String(t?.content || "")),
+    String(message || ""),
+  ];
+  for (let i = allUserTexts.length - 1; i >= 0; i--) {
+    const txt = allUserTexts[i].trim();
+    const m = txt.match(introRx);
+    if (m && m[1]) {
+      const cleaned = m[1].trim().split(/\s+/).slice(0, 2).join(" ");
+      if (!/^(fine|good|great|okay|here|ready|guest|student|asking|looking|doing|from|studying|working|boss|sir|madam)$/i.test(cleaned)) {
+        return cleaned.replace(/\b\w/g, (ch) => ch.toUpperCase());
+      }
+    }
+  }
+  if (history.length >= 1) {
+    const lastAssistant = [...history].reverse().find((t) => t?.role === "assistant");
+    if (lastAssistant && /know your name|what(?:'s| is) your name|tell me your name/i.test(String(lastAssistant.content || ""))) {
+      const solo = String(message || "").trim().replace(/^(?:hi+|hello+|hey+)\s+/i, "").replace(/[.!,?]+$/g, "").trim();
+      if (/^[a-zA-Z]{2,20}(?:\s+[a-zA-Z]{2,20})?$/.test(solo) && !/^(hi|hello|hey|yes|no|ok|okay|good|fine|thanks|what|who|open|show|pick|project|blueprints|code|python|guest|student|boss|sir|madam)$/i.test(solo)) {
+        return solo.replace(/\b\w/g, (ch) => ch.toUpperCase());
+      }
+    }
+  }
+  return "";
+}
+
 function resolveHonorific(pageContext = {}) {
   const email = String(pageContext.userEmail || "").trim().toLowerCase();
   const userName = String(pageContext.userName || "").trim().toLowerCase();
@@ -49,25 +89,26 @@ function resolveHonorific(pageContext = {}) {
     email === "guest@pathfinder.ai" ||
     email.startsWith("guest@") ||
     email.endsWith("@guest.local") ||
-    rawHon === "stranger" ||
+    rawHon === "guest" ||
     userName === "guest student" ||
-    userName === "guest" ||
-    userName === "stranger"
+    userName === "guest"
   ) {
-    return "Stranger";
+    return "Guest";
   }
   if (rawHon === "madam" || rawHon === "mam" || rawHon === "ma'am") return "Madam";
   return "Sir";
 }
 
-function buildSystemPrompt(honorific, activeTab, profile = {}, pageContext = {}) {
+function buildSystemPrompt(honorific, activeTab, profile = {}, pageContext = {}, guestName = "") {
   const identityLine =
     honorific === "Boss"
       ? "You are speaking directly with your creator and owner Bommali Dileep. Address him warmly and loyally as 'Boss'. Only say 'Hi Boss! What's up?' once at the start of a brand-new conversation; if there is prior history, reply concisely with 'Hi Boss, I'm here!' or answer directly."
       : honorific === "Madam"
         ? "You are speaking with a female visitor, evaluator, or friend. Address her respectfully as 'Madam'. NEVER call her 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'"
-        : honorific === "Stranger"
-          ? "You are speaking with an unidentified guest visitor. Address them politely as 'Stranger' and ask them to tell you their name first until they share their name. NEVER call them 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'"
+        : honorific === "Guest"
+          ? guestName
+            ? `GUEST NAME MEMORY LOCKED: The guest visitor's name is '${guestName}'. Address them warmly as '${guestName}' and NEVER ask for their name again! NEVER call them 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'`
+            : "You are speaking with a welcome guest visitor. Politely ask their name once if they haven't introduced themselves; once they share their name, remember it permanently and NEVER ask again. NEVER call them 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'"
           : "You are speaking with a male visitor, evaluator, or friend. Address him politely as 'Sir'. NEVER call him 'Boss'. If asked who your Boss/creator is, reply proudly: 'His name is Dileep.'";
 
   const branch = profile?.branch || pageContext?.branch || "CSE";
@@ -121,16 +162,21 @@ export async function POST(request) {
     const activeTab = String(body?.active_tab || pageContext.activeTab || "overview");
 
     const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
+    const guestName = honorific === "Guest" ? extractGuestName(message, history, pageContext, profile) : "";
     const isPureHi = /^\s*(hi+|hello+|hey+|hai+|hlo+|yo+|namaste|good\s*(?:morning|afternoon|evening)|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$/i.test(
       message
     );
     if (isPureHi) {
       const hasPriorTurns = history.length > 0;
       const hiReply =
-        honorific === "Stranger"
-          ? hasPriorTurns
-            ? "Hi stranger, I'm here — tell me your name first!"
-            : "Hi stranger, tell your name first!"
+        honorific === "Guest"
+          ? guestName
+            ? hasPriorTurns
+              ? `Hi ${guestName}, I'm right here!`
+              : `Hi ${guestName}! How can I help you today?`
+            : hasPriorTurns
+              ? "Hi there! Tell me your name once and I'll remember it throughout your session!"
+              : "Hi! Welcome to Pathfinder! May I know your name?"
           : hasPriorTurns
             ? `Hi ${honorific}, I'm here!`
             : `Hi ${honorific}! What's up?`;
@@ -147,12 +193,14 @@ export async function POST(request) {
       message
     );
     if (isSelfIdentity) {
-      const candName = String(profile?.name || pageContext?.userName || "").trim();
+      const candName = guestName || String(profile?.name || pageContext?.userName || "").trim();
       const idReply =
         honorific === "Boss"
           ? "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
-          : honorific === "Stranger"
-            ? "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+          : honorific === "Guest"
+            ? guestName
+              ? `You're ${guestName}! I have your name saved — how can I help you on Pathfinder 2.0 today?`
+              : "You're exploring Pathfinder 2.0 in a Guest session — tell me your name once and I'll remember it!"
             : candName && candName.toLowerCase() !== "student"
               ? `You're ${candName}, signed in as ${honorific} on Pathfinder 2.0!`
               : `You're signed in as ${honorific} on Pathfinder 2.0! How can I help you today?`;
@@ -180,7 +228,7 @@ export async function POST(request) {
 
     const preferredModel = (process.env.GEMINI_MODEL || "gemini-3.1-flash-lite").trim();
     const models = [...new Set([preferredModel, "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"])];
-    const systemText = buildSystemPrompt(honorific, activeTab, profile, pageContext);
+    const systemText = buildSystemPrompt(honorific, activeTab, profile, pageContext, guestName);
 
     for (const apiKey of keys) {
       for (const model of models) {

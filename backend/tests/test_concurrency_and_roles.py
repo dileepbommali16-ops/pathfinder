@@ -49,25 +49,28 @@ class TestConcurrencyAndRoleSecurity(unittest.TestCase):
             ),
             "Boss",
         )
-        # Guest account MUST resolve to Stranger even if Madam/Boss was requested
+        # Guest account MUST resolve to Guest (never Boss) and remember introduced name permanently
         self.assertEqual(
             _resolve_verified_honorific(
                 page_context={"honorific": "Madam", "userEmail": "guest@pathfinder.ai", "userName": "Guest Student"}
             ),
-            "Stranger",
+            "Guest",
         )
         guest_hi_1 = generate_smart_fallback_reply(
             "hi baby",
             history=[],
             page_context={"userEmail": "guest@pathfinder.ai", "userName": "Guest Student", "honorific": "Madam"},
         )
-        self.assertEqual(guest_hi_1, "Hi stranger, tell your name first!")
-        guest_hi_2 = generate_smart_fallback_reply(
-            "hi baby",
-            history=[{"role": "user", "content": "hi"}, {"role": "assistant", "content": guest_hi_1}],
+        self.assertEqual(guest_hi_1, "Hi! Welcome to Pathfinder! May I know your name?")
+        guest_hi_after_name = generate_smart_fallback_reply(
+            "hi",
+            history=[
+                {"role": "assistant", "content": guest_hi_1},
+                {"role": "user", "content": "My name is Deepika"},
+            ],
             page_context={"userEmail": "guest@pathfinder.ai", "userName": "Guest Student"},
         )
-        self.assertEqual(guest_hi_2, "Hi stranger, I'm here — tell me your name first!")
+        self.assertEqual(guest_hi_after_name, "Hi Deepika, I'm right here!")
 
     def test_screen_monitor_and_builder_encyclopedia_answers(self):
         monitor_reply = generate_smart_fallback_reply(

@@ -81,7 +81,7 @@ The palette is strictly grounded in dark obsidian tones with precision-curated l
 - **Slate Metadata** (`#64748b`): Tertiary labels, timestamps, and muted stats.
 
 ### Named Rules
-**The Protected Canvas Rule.** The global background (`#0a0b10`), the OLED avatar viewport (`#000000`), the LampLogin presentation, and the 3D WebGL motion system are protected platform anchors and must never be altered or replaced with light themes.
+**The Protected Canvas Rule.** The global background (`#0a0b10`), the OLED avatar viewport (`#000000`), the SignInPage presentation, and the 3D WebGL motion system are protected platform anchors and must never be altered or replaced with light themes.
 
 ## Typography
 
@@ -143,7 +143,7 @@ Pathfinder conveys depth through tonal obsidian layering and translucent borders
 
 ### Do:
 - **Do** preserve the OLED True Black (`#000000`) container around the AI Avatar Canvas.
-- **Do** preserve the LampLogin page styling, shaders, and animations.
+- **Do** preserve the SignInPage styling, shaders, and animations.
 - **Do** preserve the 3D WebGL background motion and shader loops.
 - **Do** keep text contrast at or above WCAG AA (4.5:1) against dark cards.
 - **Do** use Wine (`#9f1239`) and Violet (`#7c3aed`) sparingly for deliberate emphasis.

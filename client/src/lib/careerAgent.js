@@ -9,10 +9,20 @@
  * - Strictly enforces a compact System Prompt < 2,000 tokens (~420 tokens).
  */
 
-import { DEFAULT_PROJECT_CATALOG } from "@/data/projectCatalog";
+import {
+  DEFAULT_PROJECT_CATALOG,
+  findBestMatchingBlueprint,
+  buildProjectExecutionSteps,
+} from "@/data/projectCatalog";
 import { createClient } from "@supabase/supabase-js";
 import { geminiLive } from "@/agent/geminiLive";
-import { getUserRole } from "@/lib/auth";
+import {
+  getUserRole,
+  getRememberedGuestName,
+  setRememberedGuestName,
+  extractGuestIntroducedName,
+  isPureGuestNameIntroduction,
+} from "@/lib/auth";
 
 export const EMBEDDING_DIM = 384;
 export const MAX_SYSTEM_PROMPT_TOKENS = 2000;
@@ -62,14 +72,17 @@ export async function getRelevantContext(query) {
  */
 export async function askDas(userQuery, onChunk) {
   const context = await getRelevantContext(userQuery);
-  const activeRole = typeof window !== "undefined" ? getUserRole() : "Stranger";
+  const activeRole = typeof window !== "undefined" ? getUserRole() : "Guest";
+  const rememberedGuest = activeRole === "Guest" ? getRememberedGuestName() : "";
   const honorificRule =
     activeRole === "Boss"
       ? "Boss is Dileep Bommali. Address him warmly as Boss."
       : activeRole === "Madam"
         ? "The user is a respected female visitor/candidate. Always address her politely as Madam (NEVER call her Boss or Sir)."
-        : activeRole === "Stranger"
-          ? "The user is an unidentified guest visitor. Address them politely as Stranger and ask them to tell their name first until they introduce themselves (NEVER call them Boss)."
+        : activeRole === "Guest"
+          ? rememberedGuest
+            ? `The guest visitor's name is ${rememberedGuest}. Address them warmly as ${rememberedGuest} and NEVER ask for their name again (NEVER call them Boss).`
+            : "The user is a welcome guest visitor. Ask their name once politely if unknown, and once shared, remember it permanently and NEVER ask again (NEVER call them Boss)."
           : "The user is a valued male visitor/candidate. Always address him respectfully as Sir (NEVER call him Boss).";
 
   const systemPrompt = `You are DAS, Pathfinder AI. ${honorificRule}
@@ -436,7 +449,7 @@ export const getCareerAgentResponse = (
   const isVerifiedOwner = storedEmailNow === "dileepbommali16@gmail.com";
   const isGuestEmail =
     !storedEmailNow || storedEmailNow === "guest@pathfinder.ai" || storedEmailNow.startsWith("guest@");
-  const rawHon = (honorific || (typeof window !== "undefined" ? getUserRole() : "Stranger"))
+  const rawHon = (honorific || (typeof window !== "undefined" ? getUserRole() : "Guest"))
     .toString()
     .toLowerCase()
     .trim();
@@ -445,13 +458,40 @@ export const getCareerAgentResponse = (
       ? "Madam"
       : rawHon === "boss" && isVerifiedOwner
         ? "Boss"
-        : rawHon === "stranger" || rawHon === "guest" || rawHon === "visitor" || (rawHon === "boss" && isGuestEmail)
-          ? "Stranger"
+        : rawHon === "guest" || rawHon === "visitor" || (rawHon === "boss" && isGuestEmail)
+          ? "Guest"
           : rawHon === "sir"
             ? "Sir"
             : isGuestEmail && !honorific
-              ? "Stranger"
+              ? "Guest"
               : "Sir";
+
+  // Extract & remember guest name from current message or history so DAS never asks twice
+  let rememberedGuestName = title === "Guest" ? getRememberedGuestName() : "";
+  if (title === "Guest") {
+    const lastAssistantMsg = [...(history || [])].reverse().find((m) => m?.role === "assistant")?.content || "";
+    const awaitingName = /know your name|what(?:'s| is) your name|tell me your name/i.test(lastAssistantMsg);
+    const newlyExtracted = extractGuestIntroducedName(message || "", awaitingName);
+    if (newlyExtracted) {
+      rememberedGuestName = setRememberedGuestName(newlyExtracted) || newlyExtracted;
+      if (isPureGuestNameIntroduction(message || "", rememberedGuestName)) {
+        const savedLine = `Nice to meet you, ${rememberedGuestName}! I've saved your name, so I won't ask again. How can I help you explore Pathfinder today?`;
+        return `${savedLine}|||👋 **Welcome, ${rememberedGuestName}!** Your name is saved for this session.`;
+      }
+    }
+    if (!rememberedGuestName && Array.isArray(history)) {
+      for (let i = history.length - 1; i >= 0; i--) {
+        if (history[i]?.role === "user") {
+          const histName = extractGuestIntroducedName(history[i].content || "", true);
+          if (histName) {
+            rememberedGuestName = setRememberedGuestName(histName) || histName;
+            break;
+          }
+        }
+      }
+    }
+  }
+  const addressLabel = title === "Guest" ? rememberedGuestName || "there" : title;
 
   // Perform semantic search first (Top 3 results from 28 blueprints + 972 placements)
   const top3Rag = semanticSearchSync(message, profile, 3);
@@ -493,10 +533,16 @@ export const getCareerAgentResponse = (
         `|||👑 **Identity Confirmed:** Dileep Bommali (Boss & Pathfinder 2.0 Creator).`
       );
     }
-    if (title === "Stranger") {
+    if (title === "Guest") {
+      if (rememberedGuestName) {
+        return (
+          `You're ${rememberedGuestName}! I remember your name — how can I help you with your placement readiness today?` +
+          `|||👤 **Identity:** ${rememberedGuestName} (Guest Session).`
+        );
+      }
       return (
-        `You are currently in Stranger mode as a guest visitor — tell me your name first so I know who I'm speaking with!` +
-        `|||👤 **Identity:** Guest Session (Stranger Mode).`
+        `You are exploring Pathfinder 2.0 in a Guest session — tell me your name once and I'll remember it!` +
+        `|||👤 **Identity:** Guest Session.`
       );
     }
     const storedName =
@@ -537,7 +583,9 @@ export const getCareerAgentResponse = (
   }
   if (/\b(call\s*me\s*(?:madam|mam|ma'am)|i\s*am\s*a\s*(?:girl|woman|female|lady))\b/i.test(text)) {
     if (isGuestEmail) {
-      return `Guest sessions remain in Stranger mode — tell me your name first or sign in with your account!|||👤 **Stranger Mode Active:** Guest session.`;
+      return rememberedGuestName
+        ? `Got it, ${rememberedGuestName}! How can I help you on Pathfinder today?|||👤 **Guest Session:** ${rememberedGuestName}.`
+        : `Welcome! Tell me your name once and I'll remember it throughout your session, or sign in with your account!|||👤 **Guest Session Active.**`;
     }
     try {
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Madam");
@@ -546,18 +594,22 @@ export const getCareerAgentResponse = (
   }
   if (/\bcall\s*me\s*sir\b|\bi\s*am\s*a\s*(?:boy|man|male)\b/i.test(text)) {
     if (isGuestEmail) {
-      return `Guest sessions remain in Stranger mode — tell me your name first or sign in with your account!|||👤 **Stranger Mode Active:** Guest session.`;
+      return rememberedGuestName
+        ? `Got it, ${rememberedGuestName}! How can I help you on Pathfinder today?|||👤 **Guest Session:** ${rememberedGuestName}.`
+        : `Welcome! Tell me your name once and I'll remember it throughout your session, or sign in with your account!|||👤 **Guest Session Active.**`;
     }
     try {
       if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Sir");
     } catch { }
     return `Understood, Sir! I have switched to Sir mode and will address you as Sir. How may I assist you with Pathfinder today?|||🎩 **Identity Active:** Addressing you as **Sir**.`;
   }
-  if (/\b(guest\s*mode|i\s*am\s*a\s*(?:guest|visitor|stranger))\b/i.test(text)) {
+  if (/\b(guest\s*mode|i\s*am\s*a\s*(?:guest|visitor))\b/i.test(text)) {
     try {
-      if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Stranger");
+      if (typeof window !== "undefined") localStorage.setItem("das_honorific_override", "Guest");
     } catch { }
-    return `Stranger mode active! Tell me your name first so I know who I'm speaking with.|||👤 **Stranger Mode Active:** Guest session.`;
+    return rememberedGuestName
+      ? `Guest session active, ${rememberedGuestName}! How can I help you today?|||👤 **Guest Session:** ${rememberedGuestName}.`
+      : `Guest session active! Tell me your name once and I'll remember it throughout your session.|||👤 **Guest Session Active.**`;
   }
 
   // Voice & Audio Feedback Queries
@@ -607,62 +659,33 @@ export const getCareerAgentResponse = (
     return `Taking you to the top of the page, ${title}. <!--ACTION: {"type": "SCROLL_TO", "target": "top"}-->`;
   }
 
-  // PROJECTS & BLUEPRINTS (with automatic spotlight on small/starter project)
+  // PROJECTS & BLUEPRINTS (with automatic navigation, scroll-highlight, and 5-step build guide for ALL 28 real blueprints)
   if (
-    /\b(blueprints?|projects?|portfolio)\b/i.test(text) ||
+    /\b(blueprints?|projects?|portfolio|graphrag|rag)\b/i.test(text) ||
     /\b(chinna\s*project|small\s*project|starter\s*project|project\s*ivvu)\b/i.test(text)
   ) {
-    if (/\b(chinna|small|easy|beginner|starter|simple|anomaly|detector)\b/i.test(text)) {
-      const speech =
-        title === "Boss"
-          ? "Boss, I have opened the Real-Time Log Anomaly Detector blueprint for you. It is our top starter architecture with 16ms real-time latency, and the complete 6-step engineering lifecycle is now displayed on your screen."
-          : `${title}, I have opened the Real-Time Log Anomaly Detector blueprint for you. Here is your full 6-step engineering lifecycle from VS Code setup to production deployment.`;
+    const { project: picked, index: bpNum } = findBestMatchingBlueprint(
+      message || text,
+      DEFAULT_PROJECT_CATALOG,
+      branch
+    );
+    const steps = buildProjectExecutionSteps(picked, bpNum);
+    const bpTag = `#${String(bpNum).padStart(2, "0")}`;
+    const stepsMarkdown = steps
+      .map((s) => `- **${s.phase} — ${s.title}:** ${s.detail}`)
+      .join("\n");
+    const speech =
+      `I picked Blueprint ${bpTag}, ${picked.title}, and took you straight to that card on Slide 04 Project Blueprints, ${addressLabel}. ` +
+      `It uses ${picked.techStack.slice(0, 4).join(", ")}. Step 1: set up the workspace and core modules. Step 2: build the ${picked.domain} pipeline (${picked.architectureSummary || picked.overview}). Step 3: connect the UI, test latency, and deploy on Vercel and Render. I've opened the full 5-step build guide right on the card!`;
 
-      return (
-        `${speech}` +
-        `|||🚀 **Real-Time Log Anomaly Detector — 6-Step Engineering Lifecycle (${title}):**\n\n` +
-        `💡 **1. Why this is a Small / Starter Project:**\n` +
-        `- **Tech Stack**: React 18, Tailwind CSS, Node/Vercel Edge Functions, Supabase pgvector.\n` +
-        `- **Time & Complexity**: 4–6 days build time. Eliminates complex multi-service orchestration while demonstrating rigorous low-latency streaming and streaming statistics.\n` +
-        `- **Interview Payoff**: Proves understanding of streaming backpressure, moving average/std-dev calculations, and vector clustering.\n\n` +
-        `📁 **Step 1: Setup, VS Code & Architecture Structure:**\n` +
-        `- Recommended Extensions: ESLint, Prettier, Tailwind CSS IntelliSense, Thunder Client.\n` +
-        `- Folder Structure:\n` +
-        `\`\`\`text\n` +
-        `├── src/\n` +
-        `│   ├── components/anomaly/ (MetricsCard.tsx, LiveStreamGraph.tsx, AlertBanner.tsx)\n` +
-        `│   ├── hooks/ (useLogStream.ts, useAnomalyDetector.ts)\n` +
-        `│   ├── lib/ (streamBuffer.ts, zscoreEngine.ts, supabaseClient.ts)\n` +
-        `│   └── types/ (logEvent.ts, metricSnapshot.ts)\n` +
-        `├── api/logs/ingest.ts (Vercel Edge function)\n` +
-        `└── tests/anomaly.spec.ts\n` +
-        `\`\`\`\n\n` +
-        `🎨 **Step 2: UI/UX System (Figma to Tailwind):**\n` +
-        `- Palette: Dark Obsidian background (\`#080A11\`), Slate borders (\`#1E293B\`), Crimson alerts (\`#EF4444\`), Emerald health (\`#10B981\`).\n` +
-        `- Components: High-throughput 60fps canvas sparkline, real-time RPS counter, and interactive incident timeline with glowing borders.\n\n` +
-        `⚡ **Step 3: Frontend Implementation (React + Hooks):**\n` +
-        `- \`useLogStream.ts\`: Consumes Server-Sent Events (SSE) via \`fetchEventSource\`.\n` +
-        `- \`streamBuffer.ts\`: In-memory circular buffer (max 150 points) storing incoming timestamps & response latencies without triggering React re-render thrashing.\n` +
-        `- \`zscoreEngine.ts\`: Computes rolling Welford algorithm mean & variance; flags samples with Z-score > 3.0.\n\n` +
-        `🛠️ **Step 4: Backend & Supabase API Design:**\n` +
-        `- Endpoint \`POST /api/logs/ingest\` (Edge runtime): validates schema via Zod and streams batch inserts.\n` +
-        `- Database: Supabase PostgreSQL table \`anomalies\` with indexed \`created_at\` and JSONB metadata.\n\n` +
-        `🧠 **Step 5: ML & Vector Intelligence Lifecycle:**\n` +
-        `- Data: Ingests server latency metrics and log strings.\n` +
-        `- Vector Embeddings: 384-dimensional embeddings for anomalous log messages stored in Supabase pgvector.\n` +
-        `- Automated Root-Cause Matching: Compares incoming crash stacktraces with historical resolved issues using cosine similarity.\n\n` +
-        `🚀 **Step 6: Production Deployment & Verification:**\n` +
-        `- Deployment: Vercel Edge with zero cold-start delay.\n` +
-        `- Environment Variables: \`VITE_SUPABASE_URL\`, \`VITE_SUPABASE_ANON_KEY\`.\n` +
-        `- Verification: Load-tested via Artillery with 1,000 req/sec proving 99.9% uptime.\n\n` +
-        `🧰 **Languages & Tools**: TypeScript, React, Tailwind CSS, Vite, Supabase, Vercel, Artillery.\n` +
-        `⚠️ **Common Mistakes**: Storing high-frequency logs in React state directly (causes UI lag); use a mutable ref circular buffer instead.\n\n` +
-        `<!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "chinna"}-->`
-      );
-    }
     return (
-      `Pulling up the 28 production project blueprints for ${branch} now, ${title}.` +
-      `|||📁 **Top 3 Semantic Blueprint Matches (${branch}):**\n${top3Markdown} <!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}-->`
+      `${speech}` +
+      `|||🚀 **Blueprint ${bpTag}: ${picked.title} (${picked.difficulty})**\n` +
+      `📍 **Location:** Slide 04 · Project Blueprints → Card **${bpTag}** (\`${picked.id}\`)\n` +
+      `🧰 **Tech Stack:** ${picked.techStack.join(" · ")}\n` +
+      `🏗️ **Architecture:** ${picked.architectureSummary || picked.overview}\n\n` +
+      `### 🛠️ 5-Step Build & Deployment Guide\n${stepsMarkdown}\n\n` +
+      `<!--ACTION: {"type": "NAVIGATE_TAB", "target": "projects"}--> <!--ACTION: {"type": "HIGHLIGHT_PROJECT", "target": "${picked.id}"}-->`
     );
   }
 
@@ -742,7 +765,7 @@ export const getCareerAgentResponse = (
     }
   }
 
-  // 2. Casual Greetings — Strict 4-role exact rules (Boss / Madam / Sir / Stranger)
+  // 2. Casual Greetings — Strict role rules (Boss / Madam / Sir / Guest with remembered name)
   const isGreeting =
     /^\s*(hi+|hello+|hey+|namaste|good\s*(?:morning|afternoon|evening)|yo+|hola|sup|hai+|hlo+|namaskaram)(?:\s+(?:das|boss|bro|baby|babe|buddy|dude|man|there|ai|sir|madam))?[\s!.,?]*$/i.test(
       text
@@ -756,17 +779,24 @@ export const getCareerAgentResponse = (
           t.includes("whats up") ||
           t.includes("i'm here") ||
           t.includes("im here") ||
-          t.includes("tell your name") ||
+          t.includes("right here") ||
+          t.includes("know your name") ||
+          t.includes("tell me your name") ||
           t.includes("how can i assist") ||
           t.includes("ready when you are") ||
-          t.includes("right here") ||
           t.includes("what can i help")
       );
-    if (title === "Stranger") {
-      const strangerLine = alreadyGreeted
-        ? "Hi stranger, I'm here — tell me your name first!"
-        : "Hi stranger, tell your name first!";
-      return `${strangerLine}|||👋 **${strangerLine}**`;
+    if (title === "Guest") {
+      if (rememberedGuestName) {
+        const guestKnownLine = alreadyGreeted
+          ? `Hi ${rememberedGuestName}, I'm right here!`
+          : `Hi ${rememberedGuestName}! How can I help you today?`;
+        return `${guestKnownLine}|||👋 **${guestKnownLine}**`;
+      }
+      const guestNewLine = alreadyGreeted
+        ? "Hi there! Tell me your name once and I'll remember it throughout your session!"
+        : "Hi! Welcome to Pathfinder! May I know your name?";
+      return `${guestNewLine}|||👋 **${guestNewLine}**`;
     }
     if (alreadyGreeted) {
       const shortHere =
@@ -795,8 +825,10 @@ export const getCareerAgentResponse = (
     const idReply =
       title === "Boss"
         ? "You're Boss — Bommali Dileep, my creator and the architect of Pathfinder 2.0!"
-        : title === "Stranger"
-          ? "You're in Stranger Mode right now — tell me your name first so I know who I'm speaking with!"
+        : title === "Guest"
+          ? rememberedGuestName
+            ? `You're ${rememberedGuestName}! I remember your name — how can I help you on Pathfinder 2.0 today?`
+            : "You're exploring Pathfinder 2.0 in a Guest session — tell me your name once and I'll remember it!"
           : `You're signed in as ${title} on Pathfinder 2.0! How can I help you today?`;
     return `${idReply}|||👤 **${idReply}**`;
   }

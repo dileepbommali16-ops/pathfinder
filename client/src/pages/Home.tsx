@@ -8,9 +8,8 @@ import type { Message } from "@/components/dashboard/AICoachConsole";
 import { useScreenWatcher } from "@/hooks/useScreenWatcher";
 import { CohortExplorer, CohortAnalyticsData } from "@/components/dashboard/CohortExplorer";
 import { ResumeStudio, ResumeFeedbackData } from "@/components/dashboard/ResumeStudio";
-import { LampLogin } from "@/components/auth/LampLogin";
+import { SignInPage } from "@/components/auth/SignInPage";
 import { ComputeLandingPage } from "@/components/landing/ComputeLandingPage";
-import { Ambient3DBackground } from "@/components/dashboard/Ambient3DBackground";
 import { ProjectRecommender } from "@/components/dashboard/ProjectRecommender";
 import { RoleIntelligence } from "@/components/dashboard/RoleIntelligence";
 import { BranchIntelligence } from "@/components/dashboard/BranchIntelligence";
@@ -35,7 +34,14 @@ import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
 import { getCareerAgentResponse, buildRagGeminiSystemPrompt } from "@/lib/careerAgent";
 import { geminiLive } from "@/agent/geminiLive";
 import { audioEngine } from "@/agent/audioIO";
-import { handleAuthLoginDetected, initAuthMode, getUserRole, toHonorificKey } from "@/lib/auth";
+import {
+  handleAuthLoginDetected,
+  initAuthMode,
+  getUserRole,
+  toHonorificKey,
+  getRememberedGuestName,
+  clearRememberedGuestName,
+} from "@/lib/auth";
 import {
   Sparkles,
   ArrowRight,
@@ -256,6 +262,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         } else if (fKey === "targetRole" || fKey === "target_role") {
           next.targetRole = String(value);
           displayVal = next.targetRole;
+        } else if (fKey === "fullName" || fKey === "full_name") {
+          next.fullName = String(value).trim();
+          displayVal = next.fullName;
+          setUsername(next.fullName);
         } else {
           return prev;
         }
@@ -264,12 +274,23 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         } catch { }
         queueMicrotask(() => {
           fallbackPredict(next, null, next.githubVerifiedScore ?? null);
-          toast.success(`Updated ${String(field).toUpperCase()} to ${displayVal}`, {
-            id: "das-profile-update",
-          });
+          if (!e?.detail?.silentToast) {
+            toast.success(`Updated ${String(field).toUpperCase()} to ${displayVal}`, {
+              id: "das-profile-update",
+            });
+          }
         });
         return next;
       });
+    };
+
+    const handleDASDemoProfile = (e: any) => {
+      const act = String(e?.detail?.action || "load").toLowerCase();
+      if (act === "clear") {
+        handleClearDemoProfile();
+      } else {
+        handleLoadDemoProfile();
+      }
     };
 
     let lastNavToastTab = "";
@@ -343,6 +364,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     window.addEventListener("das-open-mock-interview", handleDASInterview);
     window.addEventListener("das-set-filter", handleDASSetFilter);
     window.addEventListener("das-update-profile", handleDASUpdateProfile);
+    window.addEventListener("das-demo-profile", handleDASDemoProfile);
     window.addEventListener("pathfinder:agent-action", handleAgentAction);
 
     return () => {
@@ -352,6 +374,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       window.removeEventListener("das-open-mock-interview", handleDASInterview);
       window.removeEventListener("das-set-filter", handleDASSetFilter);
       window.removeEventListener("das-update-profile", handleDASUpdateProfile);
+      window.removeEventListener("das-demo-profile", handleDASDemoProfile);
       window.removeEventListener("pathfinder:agent-action", handleAgentAction);
     };
   }, []);
@@ -988,8 +1011,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       {
         role: "assistant",
         content:
-          role === "Stranger"
-            ? "Hi stranger, tell your name first!"
+          role === "Guest"
+            ? getRememberedGuestName()
+              ? `Hi ${getRememberedGuestName()}! How can I help you today?`
+              : "Hi! Welcome to Pathfinder! May I know your name?"
             : `Hi ${role}! What's up?`,
       },
     ]);
@@ -2100,6 +2125,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     localStorage.removeItem("isOwner");
     localStorage.removeItem("das_mode");
     localStorage.removeItem("das_honorific_override");
+    clearRememberedGuestName();
     setIsAuthenticated(false);
     setAuthView("landing");
     setActiveTab("profile");
@@ -2174,7 +2200,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   if (!isAuthenticated) {
     if (authView === "login") {
       return (
-        <LampLogin
+        <SignInPage
           onLogin={handleLogin}
           initialError={oauthError}
           onBack={openLandingView}
@@ -2204,11 +2230,6 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           <span>Waking up the server, this can take up to a minute...</span>
         </div>
       )}
-
-      {/* BACKGROUND SYSTEM - Transparent wrapper inside <main z-10> so body #000000 + Avatar3D at z-[1] show cleanly */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-transparent" aria-hidden="true">
-        <Ambient3DBackground activeTab={activeTab} />
-      </div>
 
       {/* Top Header */}
       <DashboardHeader
