@@ -68,8 +68,18 @@ const SLIDE_PREVIEWS: Record<
       "Interactive 6-week placement sprint roadmap persisted per candidate",
     ],
   },
+  progress: {
+    eyebrow: "Slide 06 · My Progress Journey",
+    metric: "Real Trend",
+    metricLabel: "Only results you actually earned",
+    points: [
+      "Readiness trend line from real Random Forest re-scores",
+      "Best ATS scan, Coding Arena average & interview scorecards in one view",
+      "Next-best-step guidance that links straight to the right slide",
+    ],
+  },
   profile: {
-    eyebrow: "Slide 06 · Candidate Single Source of Truth",
+    eyebrow: "Slide 07 · Candidate Single Source of Truth",
     metric: "Live Sync",
     metricLabel: "Real-time prediction recalibration",
     points: [

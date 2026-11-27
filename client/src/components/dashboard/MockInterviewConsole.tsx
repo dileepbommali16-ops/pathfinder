@@ -6,6 +6,7 @@ import { onVoiceStateChange } from "@/audio/voiceManager";
 import { API_BASE } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { evaluateMockInterviewAnswer } from "@/lib/interviewEvaluator";
+import { recordProgressEvent } from "@/lib/progressTracker";
 
 interface MockInterviewConsoleProps {
   profile: StudentProfileState;
@@ -454,6 +455,14 @@ export const MockInterviewConsole: React.FC<MockInterviewConsoleProps> = ({
         modelCritique: result.modelCritique,
         evaluationSource: result.evaluationSource,
       });
+      if (!result.isNonAnswer || result.overallScore >= 0) {
+        recordProgressEvent(
+          "interview",
+          result.overallScore,
+          `${currentQ.company} · ${currentQ.roundType}`,
+          result.evaluationSource
+        );
+      }
     } finally {
       setIsEvaluating(false);
     }

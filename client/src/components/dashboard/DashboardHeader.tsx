@@ -13,6 +13,7 @@ export type TabId =
   | "profile"
   | "roles"
   | "projects"
+  | "progress"
   | "resume";
 
 interface DashboardHeaderProps {
@@ -49,7 +50,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const displayEmail = isBoss ? "dileepbommali16@gmail.com" : email;
   const activeIndex = Math.max(0, TABS.findIndex((t) => t.id === activeTab));
   const activeTabMeta = TABS[activeIndex];
-  const slideBadge = `Slide ${String(activeIndex + 1).padStart(2, "0")} / 06`;
+  const slideBadge = `Slide ${String(activeIndex + 1).padStart(2, "0")} / ${String(TABS.length).padStart(2, "0")}`;
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#050507]/88 backdrop-blur-xl">

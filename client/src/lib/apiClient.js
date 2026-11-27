@@ -1,7 +1,7 @@
 /**
  * Pathfinder 2.0 Centralized API Client & Autonomous Edge Engine
  * - Unified base URL resolution
- * - Zero-error Autonomous Edge Fallback when cloud Render backend is suspended/sleeping
+ * - Honest cold-start handling: waits for the sleeping Render backend and retries (never fakes answers)
  * - Automatic Authorization: Bearer <token> injection
  * - 401 interception: clean logout and redirect event
  */
@@ -32,155 +32,77 @@ export const getSessionId = () => {
   return sid;
 };
 
-const DEFAULT_SKILLS_BENCHMARKS = [
-  { name: "Dynamic Programming", category: "DSA" },
-  { name: "System Design Fundamentals", category: "Architecture" },
-  { name: "SQL & Query Optimization", category: "Databases" },
-  { name: "Docker & Containerization", category: "DevOps" },
-  { name: "REST API Architecture", category: "Backend" },
-  { name: "Core Java / OOP Concurrency", category: "Languages" },
-];
+// Render free-tier instances sleep when idle. The guard never invents local answers
+// (no fake predictions, fake health checks, fake logins or synthetic 404s). It waits
+// for the real cloud backend to wake up and replays the same request with backoff.
+const WAKE_RETRY_DELAYS_MS = [2000, 3000, 5000, 8000, 10000, 12000, 15000];
 
-function computeEdgePrediction(body = {}) {
-  const cgpa = Number(body.cgpa ?? 7.8);
-  const backlogs = Number(body.backlogs ?? 0);
-  const internships = Number(body.internships ?? 1);
-  const communication = Number(body.communication ?? 7);
-  const coding = Number(body.coding ?? 7);
-
-  const raw =
-    cgpa * 5.2 +
-    Math.max(0, 3 - backlogs) * 4 +
-    Math.min(internships, 3) * 5 +
-    communication * 2.2 +
-    coding * 2.7 -
-    Math.max(backlogs - 1, 0) * 5;
-  const chance = Math.max(18, Math.min(96, Math.round(raw * 10) / 10));
-  const tone = chance >= 75 ? "strong" : chance >= 55 ? "steady" : "focus";
-  const label =
-    chance >= 75
-      ? "Strong Candidate Profile"
-      : chance >= 55
-        ? "Solid Foundation"
-        : "Needs Focus & Acceleration";
-
-  const strengths = [
-    `High Academic Distinction (CGPA ${cgpa.toFixed(1)}/10)`,
-    backlogs === 0 ? "Clean Academic Record (0 Active Backlogs)" : "Eligible for standard drives",
-    internships > 0 ? `Practical Engineering Exposure (${internships} Internship)` : "Active academic projects",
-    `Core Problem Solving Foundation (${coding}/10)`,
-  ];
-  const priorities = [
-    cgpa < 7.0
-      ? "Raise CGPA to >= 7.0 for top-tier cutoff"
-      : "Target Blind 75 DSA patterns to elevate screening clearance rate",
-    coding < 8
-      ? "Complete 2 flagship system architecture blueprints with Docker + CI/CD"
-      : "Participate in timed FAANG-style mock technical rounds",
-  ];
-  const breakdown = {
-    academics: Math.round(cgpa * 10),
-    coding_dsa: Math.round(coding * 10),
-    communication: Math.round(communication * 10),
-    experience: Math.min(100, Math.max(35, internships * 35)),
-    eligibility: Math.max(0, 100 - backlogs * 25),
-  };
-
-  return {
-    chance,
-    label,
-    tone,
-    strengths,
-    priorities,
-    breakdown,
-    category_breakdown: breakdown,
-  };
-}
-
-function createJsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-async function handleAutonomousEdgeRequest(urlStr, options = {}) {
-  let pathname = urlStr;
+const emitBackendStatus = (status) => {
+  if (typeof window === "undefined") return;
   try {
-    const parsed = new URL(urlStr, typeof window !== "undefined" ? window.location.origin : PROD_BACKEND_URL);
-    pathname = parsed.pathname;
+    window.__pathfinderBackendStatus = status;
+    window.dispatchEvent(new CustomEvent("pathfinder-backend-status", { detail: { status } }));
   } catch {
-    // keep raw path
+    // ignore
   }
+};
 
-  let bodyObj = {};
-  if (options && typeof options.body === "string" && options.body.trim().startsWith("{")) {
-    try {
-      bodyObj = JSON.parse(options.body);
-    } catch {
-      bodyObj = {};
+const isColdStartStatus = (status) => status === 502 || status === 503 || status === 504;
+
+const abortError = () => {
+  try {
+    return new DOMException("Aborted", "AbortError");
+  } catch {
+    const err = new Error("Aborted");
+    err.name = "AbortError";
+    return err;
+  }
+};
+
+const sleepUnlessAborted = (ms, signal) =>
+  new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(abortError());
+      return;
     }
-  }
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(abortError());
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener?.("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener?.("abort", onAbort, { once: true });
+  });
 
-  if (pathname.endsWith("/api/health")) {
-    return createJsonResponse({ status: "healthy", mode: "edge-autonomous", engine: "das-edge" }, 200);
-  }
+// Structured FastAPI JSON errors (e.g. 503 GitHub rate limit detail) are real answers.
+const isStructuredBackendError = async (resp) => {
+  const contentType = resp.headers?.get("content-type") || "";
+  if (!contentType.includes("application/json")) return false;
+  const data = await resp.clone().json().catch(() => null);
+  return Boolean(data && typeof data.detail === "string");
+};
 
-  if (pathname.endsWith("/api/data/skills")) {
-    return createJsonResponse({ canonicalBenchmarks: DEFAULT_SKILLS_BENCHMARKS }, 200);
-  }
+const backendWakingResponse = () =>
+  new Response(
+    JSON.stringify({
+      status: "waking",
+      detail: "Pathfinder cloud backend is waking up. Please retry in a few seconds.",
+    }),
+    { status: 503, headers: { "Content-Type": "application/json" } }
+  );
 
-  if (pathname.endsWith("/api/predict") || pathname.endsWith("/api/skill-gap")) {
-    return createJsonResponse(computeEdgePrediction(bodyObj), 200);
-  }
+const isReplayableBody = (input, init) => {
+  if (typeof Request !== "undefined" && input instanceof Request && input.body) return false;
+  const body = init?.body;
+  if (!body || typeof body === "string") return true;
+  if (typeof FormData !== "undefined" && body instanceof FormData) return true;
+  if (typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams) return true;
+  if (typeof Blob !== "undefined" && body instanceof Blob) return true;
+  return false;
+};
 
-  if (pathname.endsWith("/api/auth/login")) {
-    const username = bodyObj.username || "Student";
-    const email = bodyObj.email || "student@pathfinder.ai";
-    return createJsonResponse(
-      {
-        token: "edge_jwt_" + Date.now(),
-        user: { username, email, role: "student" },
-      },
-      200
-    );
-  }
-
-  if (pathname.endsWith("/api/auth/me")) {
-    let savedUser = { username: "Student", email: "student@pathfinder.ai", role: "student" };
-    try {
-      const raw = localStorage.getItem("pathfinder_user");
-      if (raw) savedUser = JSON.parse(raw);
-    } catch { }
-    return createJsonResponse(savedUser, 200);
-  }
-
-  if (pathname.endsWith("/api/profile")) {
-    if ((options.method || "GET").toUpperCase() === "POST") {
-      try {
-        localStorage.setItem("pathfinder_backend_profile", JSON.stringify(bodyObj));
-      } catch { }
-      return createJsonResponse({ status: "saved", profile: bodyObj }, 200);
-    }
-    try {
-      const saved = localStorage.getItem("pathfinder_backend_profile");
-      if (saved) return createJsonResponse(JSON.parse(saved), 200);
-    } catch { }
-    return createJsonResponse({}, 200);
-  }
-
-  if (pathname.endsWith("/agent/me")) {
-    return createJsonResponse({ status: "ready", mode: "edge-autonomous" }, 200);
-  }
-
-  // For streaming/analytics/tts endpoints, return 404 synthetic response so callers
-  // immediately use their rich local / Gemini Live Puck fallbacks with 0 console errors.
-  return createJsonResponse({ detail: "Autonomous edge fallback active" }, 404);
-}
-
-// Install global fetch guard that always calls the live Render backend first,
-// and falls back to the local autonomous edge responder only if the cloud instance
-// is unreachable or cold-starting (502/503/504).
 if (typeof window !== "undefined" && typeof window.fetch === "function" && !window.__pathfinderFetchGuarded) {
   window.__pathfinderFetchGuarded = true;
   const nativeFetch = window.fetch.bind(window);
@@ -196,28 +118,34 @@ if (typeof window !== "undefined" && typeof window.fetch === "function" && !wind
       return nativeFetch(input, init);
     }
 
-    try {
-      const resp = await nativeFetch(input, init);
-      if (resp.status === 502 || resp.status === 503 || resp.status === 504) {
-        // Preserve structured FastAPI JSON errors (e.g. 503 GitHub rate limit detail)
-        const contentType = resp.headers?.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          const clone = resp.clone();
-          const data = await clone.json().catch(() => null);
-          if (data && typeof data.detail === "string") {
-            return resp;
-          }
+    const signal = init?.signal || (typeof Request !== "undefined" && input instanceof Request ? input.signal : undefined);
+    const replayable = isReplayableBody(input, init);
+    let lastResp = null;
+
+    for (let attempt = 0; attempt <= WAKE_RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        const resp = await nativeFetch(input, init);
+        if (!isColdStartStatus(resp.status) || (await isStructuredBackendError(resp))) {
+          if (attempt > 0) emitBackendStatus("online");
+          return resp;
         }
-        return handleAutonomousEdgeRequest(urlStr, init);
+        lastResp = resp;
+      } catch (err) {
+        if (err?.name === "AbortError" || signal?.aborted) throw err;
+        lastResp = null;
       }
-      return resp;
-    } catch {
-      return handleAutonomousEdgeRequest(urlStr, init);
+      if (!replayable || attempt === WAKE_RETRY_DELAYS_MS.length) break;
+      emitBackendStatus("waking");
+      await sleepUnlessAborted(WAKE_RETRY_DELAYS_MS[attempt], signal);
     }
+
+    emitBackendStatus("offline");
+    return lastResp || backendWakingResponse();
   };
 }
 
-export const fetchWithTimeout = async (url, options = {}, timeoutMs = 55000, isRetry = false) => {
+// Cold-start wake-up retries are handled once, centrally, by the fetch guard above.
+export const fetchWithTimeout = async (url, options = {}, timeoutMs = 55000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -248,11 +176,6 @@ export const fetchWithTimeout = async (url, options = {}, timeoutMs = 55000, isR
       localStorage.removeItem("pathfinder_token");
       localStorage.removeItem("pathfinder_user");
       window.dispatchEvent(new Event("pathfinder_logout"));
-    }
-
-    if (!isRetry && (resp.status === 502 || resp.status === 503 || resp.status === 504)) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return fetchWithTimeout(url, options, timeoutMs, true);
     }
 
     return resp;

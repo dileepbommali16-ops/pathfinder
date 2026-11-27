@@ -179,8 +179,14 @@ export const WORKSPACE_SLIDES: WorkspaceSlideItem[] = [
     subtitle: "972-record synthetic placement dataset (215-record public baseline) & 6-week sprint",
   },
   {
-    id: "profile",
+    id: "progress",
     index: "06",
+    label: "My Progress",
+    subtitle: "Real ML score trend, ATS scans, arena verdicts & interview scorecards",
+  },
+  {
+    id: "profile",
+    index: "07",
     label: "Profile & Settings",
     subtitle: "Academic scores, skills & target company calibration",
   },
@@ -225,14 +231,14 @@ export const SlideTransitionBar: React.FC<SlideTransitionBarProps> = ({
           </button>
         ) : (
           <span className="inline-flex h-10 items-center font-mono text-xs text-[#8A8A92]">
-            Start of 6-Slide Workspace
+            Start of {WORKSPACE_SLIDES.length}-Slide Workspace
           </span>
         )}
       </div>
 
       <div className="flex flex-col items-center gap-2">
         <span className="font-mono text-[11px] text-[#A1A1AA] tabular-nums">
-          Slide {current.index} of 06 · {current.label}
+          Slide {current.index} of {String(WORKSPACE_SLIDES.length).padStart(2, "0")} · {current.label}
         </span>
         <div className="flex items-center gap-2">
           {WORKSPACE_SLIDES.map((s) => {

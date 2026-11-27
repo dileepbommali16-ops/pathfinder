@@ -31,6 +31,8 @@ import {
 } from "@/types/profile";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { FALLBACK_COHORT_ANALYTICS } from "@/lib/fallbackData";
+import { recordProgressEvent } from "@/lib/progressTracker";
+import { MyProgressJourney } from "@/components/dashboard/MyProgressJourney";
 import { getCareerAgentResponse, buildRagGeminiSystemPrompt } from "@/lib/careerAgent";
 import { geminiLive } from "@/agent/geminiLive";
 import { audioEngine } from "@/agent/audioIO";
@@ -69,6 +71,9 @@ export interface HomeProps {
   initialTab?: TabId;
   initialAuthView?: "landing" | "login";
 }
+
+const PREDICTION_PENDING_LABEL = "Calculating ML score...";
+const PREDICTION_WAKING_LABEL = "ML server waking up";
 
 export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   const [activeTab, setActiveTab] = useState<TabId>(() => {
@@ -169,6 +174,11 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         viva: { tab: "interview" },
         "project-defense": { tab: "interview" },
         profile: { tab: "profile" },
+        progress: { tab: "progress" },
+        "my-progress": { tab: "progress" },
+        my_progress: { tab: "progress" },
+        journey: { tab: "progress" },
+        "progress-journey": { tab: "progress" },
         "skill-gap": { tab: "overview", scrollId: "career-skill-gap" },
       };
       return tabMap[normalized] || { tab: "overview" };
@@ -273,7 +283,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           localStorage.setItem("pathfinder_profile_draft", JSON.stringify(next));
         } catch { }
         queueMicrotask(() => {
-          fallbackPredict(next, null, next.githubVerifiedScore ?? null);
+          void fetchPrediction(next);
           if (!e?.detail?.silentToast) {
             toast.success(`Updated ${String(field).toUpperCase()} to ${displayVal}`, {
               id: "das-profile-update",
@@ -621,6 +631,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       resume: "ATS Resume Studio & Scanner · Pathfinder 2.0",
       branches: "Branch & Degree Analytics · Pathfinder 2.0",
       profile: "Candidate Profile & SSOT · Pathfinder 2.0",
+      progress: "My Progress Journey · Pathfinder 2.0",
       roles: "Target Role Intelligence · Pathfinder 2.0",
     };
     document.title = titles[activeTab] || "Pathfinder 2.0 · Autonomous AI Career Intelligence";
@@ -816,7 +827,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     tone: "focus",
     strengths: [],
     priorities: [
-      "Open Slide 06 Profile & Settings to enter your CGPA, branch, and skills to compute placement readiness.",
+      "Open Slide 07 Profile & Settings to enter your CGPA, branch, and skills to compute placement readiness.",
     ],
     breakdown: {},
   };
@@ -832,26 +843,18 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     isProfileUnconfigured(profile)
       ? UNCONFIGURED_PREDICTION
       : {
-        chance: 78.5,
-        label: "Strong Candidate Profile",
-        tone: "strong",
-        strengths: [
-          "High Academic Distinction (CGPA 7.8/10)",
-          "Clean Academic Record (0 Active Backlogs)",
-          "Practical Engineering Exposure (1 Internship)",
-          "Core Problem Solving Foundation (7/10)",
+        chance: null,
+        label: PREDICTION_PENDING_LABEL,
+        tone: "focus",
+        strengths: [],
+        priorities: [
+          "Fetching your real Random Forest placement score from the Pathfinder backend...",
         ],
-        priorities: ["Target Blind 75 DSA patterns to elevate screening clearance rate"],
-        breakdown: {
-          academics: 78.0,
-          coding_dsa: 70.0,
-          communication: 70.0,
-          experience: 35.0,
-          eligibility: 100.0,
-        },
+        breakdown: {},
       }
   );
   const [isCalculating, setIsCalculating] = useState(false);
+  const predictionRetryRef = useRef<number>(0);
 
   // Continuously broadcast active slide & user profile context to the persistent 24/7 DAS Co-Pilot
   useEffect(() => {
@@ -927,9 +930,20 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       fetch(`${API_BASE}/api/health`).catch(() => { });
     }, 180000);
 
+    const handleBackendStatus = (ev: Event) => {
+      const status = (ev as CustomEvent<{ status?: string }>).detail?.status;
+      if (status === "waking" || status === "offline") setIsServerWakingUp(true);
+      if (status === "online") {
+        clearTimeout(coldTimer);
+        setIsServerWakingUp(false);
+      }
+    };
+    window.addEventListener("pathfinder-backend-status", handleBackendStatus);
+
     return () => {
       clearTimeout(coldTimer);
       clearInterval(keepAlive);
+      window.removeEventListener("pathfinder-backend-status", handleBackendStatus);
     };
   }, []);
 
@@ -1378,6 +1392,15 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           };
         }
         setPrediction(combined);
+        predictionRetryRef.current = 0;
+        if (typeof combined.chance === "number") {
+          recordProgressEvent(
+            "prediction",
+            combined.chance,
+            String(combined.label || "ML readiness"),
+            `${p.branch || ""} · CGPA ${p.cgpa ?? "-"}`.trim()
+          );
+        }
       } else {
         fallbackPredict(p, effectiveAts, effectiveGithubScore);
       }
@@ -1392,102 +1415,29 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     }
   };
 
+  // Never invent a local percentage. If the real model is unreachable (Render cold start),
+  // show an honest waiting state and retry the real /api/predict call with backoff.
   const fallbackPredict = (
     p: StudentProfileState,
-    atsScore?: number | null,
-    githubScore?: number | null
+    _atsScore?: number | null,
+    _githubScore?: number | null
   ) => {
-    const githubUrl = (p.githubUrl ?? p.codingProfiles?.github ?? "").trim();
-    const leetcodeUrl = (p.leetcodeUrl ?? p.codingProfiles?.leetcode ?? "").trim();
-    const hasGithub = Boolean(githubUrl);
-    const hasLeetcode = Boolean(leetcodeUrl);
-    const skills = p.technicalSkills || p.skills || [];
-    const certs = p.certifications || [];
-
-    const codingNorm = p.coding <= 10 ? p.coding : Math.round(p.coding / 10);
-    const commNorm = p.communication <= 10 ? p.communication : Math.round(p.communication / 10);
-    const effIntern = hasGithub ? Math.min(p.internships, 3) : Math.min(p.internships, 2);
-    const effCoding = !hasGithub && !hasLeetcode && codingNorm >= 8 ? 7.0 : codingNorm;
-    const effComm = !hasGithub && commNorm >= 8 ? 7.2 : commNorm;
-
-    const evidenceScore =
-      p.cgpa * 2.8 +
-      (p.backlogs === 0 ? 12 : Math.max(-18, 8 - p.backlogs * 9)) +
-      effCoding * 1.9 +
-      effComm * 1.2 +
-      effIntern * (hasGithub ? 3.8 : 2.2) +
-      Math.min(skills.length, 8) * 1.1 +
-      Math.min(certs.length, 3) * 2.5 +
-      (hasGithub ? 6.0 : -4.0) +
-      (hasLeetcode ? 4.0 : -2.0) +
-      (typeof atsScore === "number" ? (atsScore - 55) * 0.14 : -3.0) +
-      (typeof githubScore === "number" ? (githubScore - 50) * 0.16 : 0);
-
-    const chance = Math.max(15, Math.min(91, Math.round(evidenceScore)));
-    const tone = chance >= 76 ? "strong" : chance >= 56 ? "steady" : "focus";
-    const label =
-      chance >= 76
-        ? "Strong Candidate Profile"
-        : chance >= 56
-          ? "Solid Foundation · Add Code Proof"
-          : "Needs Focus & Acceleration";
-
-    const strengths: string[] = [
-      p.cgpa >= 7.5
-        ? `Meets Tier-1 academic cutoff (CGPA ${p.cgpa.toFixed(1)}/10.0)`
-        : `Current CGPA ${p.cgpa.toFixed(1)}/10.0`,
-      p.backlogs === 0
-        ? "Zero active backlogs (passes automated eligibility filters)"
-        : `${p.backlogs} active backlog(s) requiring immediate clearance`,
-    ];
-    if (hasGithub) {
-      strengths.push("Public GitHub portfolio attached for technical verification");
-    }
-
-    const priorities: string[] = [];
-    if (!hasGithub) {
-      priorities.push(
-        "Unverified project claim risk: attach and audit your GitHub repository in Fraud Shield."
-      );
-    }
-    if (p.internships >= 4 && !hasGithub) {
-      priorities.push(
-        `${p.internships} self-reported internships cannot raise shortlist odds without public code/ATS verification.`
-      );
-    }
-    if (!hasLeetcode) {
-      priorities.push(
-        `Self-rated ${codingNorm}/10 DSA needs an external LeetCode/Codeforces link plus timed OA practice.`
-      );
-    }
-    if (typeof atsScore !== "number") {
-      priorities.push(
-        "No ATS resume scan yet — upload your resume in 2. JD & Resume Lab to benchmark core keywords (SQL, Docker, Cloud, REST)."
-      );
-    }
-    if (certs.length === 0) {
-      priorities.push(
-        `Add at least 1 verifiable certification aligned with ${p.targetRole} (e.g. AWS, GCP, Oracle Java).`
-      );
-    }
-
     setPrediction({
-      chance,
-      label,
-      tone,
-      strengths,
-      priorities:
-        priorities.length > 0
-          ? priorities
-          : ["Practice system design trade-offs and timed 60s mock defense rounds."],
-      breakdown: {
-        academics: Math.round(Math.min(100, p.cgpa * 9.8)),
-        coding_dsa: Math.round(effCoding * (hasLeetcode ? 10 : 8)),
-        communication: Math.round(effComm * 9),
-        experience: Math.min(hasGithub ? 90 : 58, effIntern * 14 + (hasGithub ? 24 : 10)),
-        eligibility: Math.max(0, 100 - p.backlogs * 25),
-      },
+      chance: null,
+      label: PREDICTION_WAKING_LABEL,
+      tone: "focus",
+      strengths: [],
+      priorities: [
+        "The Random Forest prediction server is starting up. Your real ML score will appear automatically — no estimated number is shown in the meantime.",
+      ],
+      breakdown: {},
     });
+    if (predictionRetryRef.current < 4) {
+      predictionRetryRef.current += 1;
+      window.setTimeout(() => {
+        void fetchPrediction(p);
+      }, 6000 * predictionRetryRef.current);
+    }
   };
 
   // 2. Roadmap State
@@ -1514,7 +1464,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
             graduation_year: profile.graduationYear,
           }),
         },
-        10000
+        60000
       );
       if (resp.ok) {
         const data = await resp.json();
@@ -1989,14 +1939,18 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
       const resp = await fetchWithTimeout(
         `${API_BASE}/api/ai/cohort-insight?${q.toString()}`,
         { method: "POST" },
-        25000
+        60000
       );
       if (resp.ok) {
         const data = await resp.json();
         setCohortInsight(data);
         toast.success("Cohort intelligence summary generated!");
       } else {
-        toast.error("Unable to generate cohort AI summary right now. Please retry.");
+        toast.error(
+          resp.status === 503
+            ? "Pathfinder server is waking up. Please press Summarize again in a few seconds."
+            : "Unable to generate cohort AI summary right now. Please retry."
+        );
       }
     } catch (err) {
       console.warn("Cohort insight error:", err);
@@ -2023,13 +1977,14 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           method: "POST",
           body: formData,
         },
-        20000
+        60000
       );
       if (resp.ok) {
         const data = await resp.json();
         setResumeFeedback(data);
         toast.success("Senior Hiring Manager ATS audit complete!");
         if (typeof data?.score === "number") {
+          recordProgressEvent("ats", data.score, "ATS resume scan", file?.name || "Pasted resume text");
           fetchPrediction(profile, { atsScore: data.score });
         }
       } else {
@@ -2276,7 +2231,9 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                   const slide = WORKSPACE_SLIDES[idx];
                   return (
                     <>
-                      <span className="text-[#D4D4D8]">SLIDE {slide.index} / 06</span>
+                      <span className="text-[#D4D4D8]">
+                        SLIDE {slide.index} / {String(WORKSPACE_SLIDES.length).padStart(2, "0")}
+                      </span>
                       <span>·</span>
                       <span className="uppercase">{slide.label}</span>
                     </>
@@ -2572,6 +2529,30 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                     onRegenerate={fetchRoadmap}
                   />
                 </div>
+              </motion.div>
+            )}
+
+            {/* TAB 6: MY PROGRESS JOURNEY (real user activity only) */}
+            {activeTab === "progress" && (
+              <motion.div
+                key="progress"
+                data-slide-theme="dashboard-black-plum"
+                data-das-id="progress-journey"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.12 }}
+                className="space-y-16 sm:space-y-20"
+              >
+                <MyProgressJourney
+                  currentChance={prediction.chance}
+                  currentLabel={prediction.label}
+                  onNavigateTab={(tab) => {
+                    setActiveTab(tab as TabId);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  onAskCoach={(q) => handleAskCoach(q, "progress", "My Progress Journey")}
+                />
               </motion.div>
             )}
 

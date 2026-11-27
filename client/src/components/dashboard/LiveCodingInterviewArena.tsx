@@ -693,7 +693,13 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
           reference_solution: activeChallenge.solutionPython,
         }),
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) {
+        throw new Error(
+          resp.status === 503
+            ? "Pathfinder server is waking up — please press Submit again in a few seconds"
+            : `HTTP ${resp.status}`
+        );
+      }
       const data = await resp.json();
 
       const resultObj = {
@@ -708,6 +714,12 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
         missingKeywords: Array.isArray(data.missing_keywords) ? data.missing_keywords : [],
       };
       setVerdictResult(resultObj);
+      recordProgressEvent(
+        "arena",
+        resultObj.overallScore,
+        `${resultObj.decision} · ${activeChallenge.company}`,
+        `${activeChallenge.title} (${language})`
+      );
 
       const verdictSpeech = `Hiring Verdict for ${activeChallenge.company}: ${resultObj.decision}, score ${resultObj.overallScore} out of 100. ${resultObj.verdictText}`;
       audioEngine.unlockAudio();
