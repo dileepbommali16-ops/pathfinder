@@ -10,14 +10,34 @@ Security-Hardened Architecture:
   3. Judge0 CE Isolated Sandbox API
 """
 
+import asyncio
 import logging
 import re
 import sqlite3
 from typing import Any, Dict, Optional
+from weakref import WeakKeyDictionary
 
 import httpx
 
 logger = logging.getLogger("pathfinder.compiler")
+_LOOP_CLIENTS: "WeakKeyDictionary[asyncio.AbstractEventLoop, httpx.AsyncClient]" = WeakKeyDictionary()
+
+
+def _get_shared_http_client(timeout_sec: float = 6.5) -> httpx.AsyncClient:
+    """Returns a reusable per-event-loop keep-alive HTTP client to eliminate TLS handshake lag."""
+    try:
+        loop = asyncio.get_running_loop()
+        client = _LOOP_CLIENTS.get(loop)
+        if client is not None and not client.is_closed:
+            return client
+        client = httpx.AsyncClient(
+            timeout=timeout_sec,
+            limits=httpx.Limits(max_connections=32, max_keepalive_connections=16, keepalive_expiry=45.0),
+        )
+        _LOOP_CLIENTS[loop] = client
+        return client
+    except Exception:
+        return httpx.AsyncClient(timeout=timeout_sec)
 
 ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 MAX_CODE_CHARS = 65536
@@ -195,41 +215,42 @@ async def execute_code_live(
         }
 
         try:
-            async with httpx.AsyncClient(timeout=max(10.0, float(timeout_sec) + 6.0)) as client:
-                resp = await client.post(
-                    f"https://godbolt.org/api/compiler/{compiler_id}/compile",
-                    json=payload,
-                    headers={"Content-Type": "application/json", "Accept": "application/json"},
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    stdout_lines = [strip_ansi(item.get("text", "")) for item in data.get("stdout", [])]
-                    stderr_lines = [strip_ansi(item.get("text", "")) for item in data.get("stderr", [])]
-                    build_err_lines = [
-                        strip_ansi(item.get("text", "")) for item in data.get("buildResult", {}).get("stderr", [])
-                    ]
+            client = _get_shared_http_client(timeout_sec=6.5)
+            resp = await client.post(
+                f"https://godbolt.org/api/compiler/{compiler_id}/compile",
+                json=payload,
+                headers={"Content-Type": "application/json", "Accept": "application/json"},
+                timeout=min(6.5, max(4.5, float(timeout_sec))),
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                stdout_lines = [strip_ansi(item.get("text", "")) for item in data.get("stdout", [])]
+                stderr_lines = [strip_ansi(item.get("text", "")) for item in data.get("stderr", [])]
+                build_err_lines = [
+                    strip_ansi(item.get("text", "")) for item in data.get("buildResult", {}).get("stderr", [])
+                ]
 
-                    output = "\n".join(stdout_lines).strip()
-                    err = "\n".join(stderr_lines + build_err_lines).strip()
+                output = "\n".join(stdout_lines).strip()
+                err = "\n".join(stderr_lines + build_err_lines).strip()
 
-                    if "Compiler with ID" in err and "not found" in err:
-                        logger.warning(f"Godbolt compiler unavailable ({compiler_id}): {err}; falling back to Judge0 CE.")
+                if "Compiler with ID" in err and "not found" in err:
+                    logger.warning(f"Godbolt compiler unavailable ({compiler_id}): {err}; falling back to Judge0 CE.")
+                else:
+                    if not output and err:
+                        display = f"Compiler Diagnostics:\n{err}"
                     else:
-                        if not output and err:
-                            display = f"Compiler Diagnostics:\n{err}"
-                        else:
-                            display = output or "Program executed with no standard output."
+                        display = output or "Program executed with no standard output."
 
-                        has_build_fail = bool(build_err_lines)
-                        exit_code = data.get("code", 0)
+                    has_build_fail = bool(build_err_lines)
+                    exit_code = data.get("code", 0)
 
-                        return {
-                            "success": (exit_code == 0 and not has_build_fail),
-                            "output": display,
-                            "stderr": err,
-                            "exit_code": exit_code,
-                            "engine": f"godbolt-{compiler_id}",
-                        }
+                    return {
+                        "success": (exit_code == 0 and not has_build_fail),
+                        "output": display,
+                        "stderr": err,
+                        "exit_code": exit_code,
+                        "engine": f"godbolt-{compiler_id}",
+                    }
         except Exception as e:
             logger.warning(f"Godbolt sandbox notice: {e}. Attempting Judge0 CE sandbox...")
 
@@ -242,26 +263,27 @@ async def execute_code_live(
                 "source_code": working_code,
                 "stdin": stdin_str,
             }
-            async with httpx.AsyncClient(timeout=14.0) as client:
-                j_resp = await client.post(
-                    "https://ce.judge0.com/submissions?base64_encoded=false&wait=true",
-                    json=judge0_payload,
-                    headers={"Content-Type": "application/json"},
-                )
-                if j_resp.status_code in (200, 201):
-                    j_data = j_resp.json()
-                    status_id = (j_data.get("status") or {}).get("id", 0)
-                    j_out = strip_ansi(j_data.get("stdout") or "").strip()
-                    j_err = strip_ansi((j_data.get("compile_output") or "") + "\n" + (j_data.get("stderr") or "")).strip()
-                    j_msg = j_out if j_out else (j_err or (j_data.get("status") or {}).get("description", "Executed."))
-                    ok = status_id == 3
-                    return {
-                        "success": ok,
-                        "output": j_msg,
-                        "stderr": j_err,
-                        "exit_code": 0 if ok else status_id,
-                        "engine": f"judge0-ce-{j0_id}",
-                    }
+            client = _get_shared_http_client(timeout_sec=6.5)
+            j_resp = await client.post(
+                "https://ce.judge0.com/submissions?base64_encoded=false&wait=true",
+                json=judge0_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=6.5,
+            )
+            if j_resp.status_code in (200, 201):
+                j_data = j_resp.json()
+                status_id = (j_data.get("status") or {}).get("id", 0)
+                j_out = strip_ansi(j_data.get("stdout") or "").strip()
+                j_err = strip_ansi((j_data.get("compile_output") or "") + "\n" + (j_data.get("stderr") or "")).strip()
+                j_msg = j_out if j_out else (j_err or (j_data.get("status") or {}).get("description", "Executed."))
+                ok = status_id == 3
+                return {
+                    "success": ok,
+                    "output": j_msg,
+                    "stderr": j_err,
+                    "exit_code": 0 if ok else status_id,
+                    "engine": f"judge0-ce-{j0_id}",
+                }
         except Exception as je:
             logger.warning(f"Judge0 sandbox notice: {je}. Attempting Piston sandbox...")
 
@@ -274,22 +296,26 @@ async def execute_code_live(
             "files": [{"content": working_code}],
             "stdin": stdin_str,
         }
-        async with httpx.AsyncClient(timeout=14.0) as client:
-            p_resp = await client.post("https://emkc.org/api/v2/piston/execute", json=piston_payload)
-            if p_resp.status_code == 200:
-                p_data = p_resp.json()
-                run_info = p_data.get("run", {})
-                p_out = strip_ansi(run_info.get("output", "") or run_info.get("stdout", "")).strip()
-                p_err = strip_ansi(run_info.get("stderr", "")).strip()
-                code_val = run_info.get("code", 0)
-                display_msg = p_out if p_out else (p_err or "Program executed with no standard output.")
-                return {
-                    "success": code_val == 0,
-                    "output": display_msg,
-                    "stderr": p_err,
-                    "exit_code": code_val,
-                    "engine": f"piston-{p_lang}",
-                }
+        client = _get_shared_http_client(timeout_sec=6.0)
+        p_resp = await client.post(
+            "https://emkc.org/api/v2/piston/execute",
+            json=piston_payload,
+            timeout=6.0,
+        )
+        if p_resp.status_code == 200:
+            p_data = p_resp.json()
+            run_info = p_data.get("run", {})
+            p_out = strip_ansi(run_info.get("output", "") or run_info.get("stdout", "")).strip()
+            p_err = strip_ansi(run_info.get("stderr", "")).strip()
+            code_val = run_info.get("code", 0)
+            display_msg = p_out if p_out else (p_err or "Program executed with no standard output.")
+            return {
+                "success": code_val == 0,
+                "output": display_msg,
+                "stderr": p_err,
+                "exit_code": code_val,
+                "engine": f"piston-{p_lang}",
+            }
     except Exception as pe:
         logger.error(f"Piston sandbox execution failed: {pe}")
 

@@ -134,6 +134,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
     from google import genai
     from google.genai import types
     from backend.agent.puck_voice import get_puck_speech_config
+    from backend.config.key_resolver import mark_gemini_key_rate_limited, promote_gemini_key
 
     quota_hit_keys = 0
     for key in keys:
@@ -152,7 +153,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                         contents=text,
                         config=cfg,
                     ),
-                    timeout=5.5,
+                    timeout=4.5,
                 )
                 pcm_chunks = bytearray()
                 sample_rate = 24000
@@ -172,6 +173,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                 if pcm_chunks:
                     polished = _clean_pcm_edges(bytes(pcm_chunks), sample_rate)
                     if polished:
+                        promote_gemini_key(key)
                         return {
                             "pcm_base64": base64.b64encode(polished).decode("utf-8"),
                             "sample_rate": sample_rate,
@@ -182,8 +184,14 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                 is_quota = "429" in err_l or "resource_exhausted" in err_l or "quota" in err_l
                 if is_quota:
                     logger.info("[Voice TTS Unary %s] quota failover triggered: %r", tts_model, exc)
+                    mark_gemini_key_rate_limited(key, 600.0)
                     quota_hit_keys += 1
                     break
+                if any(tok in err_l for tok in ("api key not valid", "401", "403", "permission")):
+                    mark_gemini_key_rate_limited(key, 3600.0)
+                    break
+                if isinstance(exc, asyncio.TimeoutError) or "timeout" in err_l:
+                    mark_gemini_key_rate_limited(key, 90.0)
                 logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
                 continue
 
@@ -222,7 +230,11 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
     """Synthesize clean verbatim 24kHz PCM speech via genuine gemini-3.8-live Puck voice first."""
     from google import genai
     from google.genai import types
-    from backend.config.key_resolver import get_gemini_key_candidates, mark_gemini_key_rate_limited
+    from backend.config.key_resolver import (
+        get_gemini_key_candidates,
+        mark_gemini_key_rate_limited,
+        promote_gemini_key,
+    )
     from backend.agent.puck_voice import LIVE_MODEL, get_puck_speech_config
 
     text = _normalize_tts_text(text)
@@ -300,12 +312,13 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                                 ):
                                     break
 
-                    await asyncio.wait_for(_run_live(), timeout=5.2)
+                    await asyncio.wait_for(_run_live(), timeout=4.2)
                     raw_pcm = bytes(pcm_buf)
                     _, peak = _chunk_rms_and_peak_int16(raw_pcm)
                     if len(raw_pcm) >= 4800 and peak >= 200:
                         polished = _clean_pcm_edges(raw_pcm, 24000)
                         if polished:
+                            promote_gemini_key(key)
                             return {
                                 "pcm_base64": base64.b64encode(polished).decode("utf-8"),
                                 "sample_rate": 24000,
@@ -321,13 +334,17 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                 except Exception as exc:
                     err_s = repr(exc).lower()
                     logger.warning("[Voice TTS Live Puck] %s attempt#%d failed: %r", LIVE_MODEL, attempt_idx + 1, exc)
-                    if isinstance(exc, asyncio.TimeoutError) and len(keys) == 1:
-                        break
+                    if isinstance(exc, asyncio.TimeoutError) or "timeout" in err_s:
+                        mark_gemini_key_rate_limited(key, 90.0)
+                        if len(keys) == 1:
+                            break
+                        continue
                     if any(tok in err_s for tok in ("1011", "exhausted", "quota", "429")):
                         mark_gemini_key_rate_limited(key, 600.0)
                         quota_hits += 1
                         continue
-                    if "api key not valid" in err_s:
+                    if any(tok in err_s for tok in ("api key not valid", "401", "403", "permission")):
+                        mark_gemini_key_rate_limited(key, 3600.0)
                         continue
             if quota_hits >= len(key_candidates):
                 _LIVE_TTS_COOLDOWN_UNTIL = time.monotonic() + 10.0

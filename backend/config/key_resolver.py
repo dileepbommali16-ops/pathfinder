@@ -12,6 +12,7 @@ _FALLBACK_B64 = "QVEuQWI4Uk42Skd5LVhMRFRTbnRIbGJ5a0toWnFUR0s1RXRwR2FkVVVqN2FJWEZ
 _KNOWN_INVALID_KEY_MARKERS = ("NrNhxA", "2OppYQ")
 
 _KEY_COOLDOWN_UNTIL: Dict[str, float] = {}
+_PREFERRED_KEYS: List[str] = []
 _KEY_LOCK = threading.Lock()
 
 
@@ -26,6 +27,18 @@ def _is_known_invalid(key: str) -> bool:
     return any(marker in key for marker in _KNOWN_INVALID_KEY_MARKERS)
 
 
+def promote_gemini_key(key: str) -> None:
+    """Moves a proven working Gemini API key to the front of candidate order."""
+    clean = (key or "").strip()
+    if not clean or _is_known_invalid(clean):
+        return
+    with _KEY_LOCK:
+        _KEY_COOLDOWN_UNTIL.pop(clean, None)
+        if clean in _PREFERRED_KEYS:
+            _PREFERRED_KEYS.remove(clean)
+        _PREFERRED_KEYS.insert(0, clean)
+
+
 def mark_gemini_key_rate_limited(key: str, cooldown_sec: float = 600.0) -> None:
     """Temporarily cools down a rate-limited (429/exhausted) key so healthy backups take priority."""
     clean = (key or "").strip()
@@ -36,12 +49,15 @@ def mark_gemini_key_rate_limited(key: str, cooldown_sec: float = 600.0) -> None:
         existing = _KEY_COOLDOWN_UNTIL.get(clean, 0.0)
         if until > existing:
             _KEY_COOLDOWN_UNTIL[clean] = until
+        if clean in _PREFERRED_KEYS:
+            _PREFERRED_KEYS.remove(clean)
 
 
 def clear_gemini_key_cooldowns() -> None:
-    """Clears all temporary Gemini API key rate-limit cooldowns."""
+    """Clears all temporary Gemini API key rate-limit cooldowns and promoted preferences."""
     with _KEY_LOCK:
         _KEY_COOLDOWN_UNTIL.clear()
+        _PREFERRED_KEYS.clear()
 
 
 def _parse_extra_env_keys() -> List[str]:
@@ -85,7 +101,11 @@ def get_gemini_key_candidates() -> List[str]:
     healthy: List[str] = []
     cooled: List[tuple[float, str]] = []
     with _KEY_LOCK:
+        ordered_raw = [k for k in _PREFERRED_KEYS if k in raw_candidates]
         for k in raw_candidates:
+            if k not in ordered_raw:
+                ordered_raw.append(k)
+        for k in ordered_raw:
             cooldown_until = _KEY_COOLDOWN_UNTIL.get(k, 0.0)
             if cooldown_until <= now:
                 _KEY_COOLDOWN_UNTIL.pop(k, None)

@@ -1,4 +1,5 @@
 const keyCooldownUntil = new Map();
+let preferredKey = "";
 
 function markKeyRateLimited(apiKey, cooldownMs = 600000) {
   if (!apiKey) return;
@@ -6,6 +7,7 @@ function markKeyRateLimited(apiKey, cooldownMs = 600000) {
   if (until > (keyCooldownUntil.get(apiKey) || 0)) {
     keyCooldownUntil.set(apiKey, until);
   }
+  if (preferredKey === apiKey) preferredKey = "";
 }
 
 function getKeyCandidates() {
@@ -25,7 +27,11 @@ function getKeyCandidates() {
   const now = Date.now();
   const healthy = [];
   const cooled = [];
+  if (preferredKey && seen.has(preferredKey) && (keyCooldownUntil.get(preferredKey) || 0) <= now) {
+    healthy.push(preferredKey);
+  }
   for (const k of seen) {
+    if (k === preferredKey && healthy.includes(k)) continue;
     const until = keyCooldownUntil.get(k) || 0;
     if (until <= now) {
       keyCooldownUntil.delete(k);
@@ -129,7 +135,7 @@ export async function POST(request) {
           const resp = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(6500),
+            signal: AbortSignal.timeout(4500),
             body: JSON.stringify({
               contents: [{ role: "user", parts: [{ text }] }],
               generationConfig: {
@@ -152,7 +158,10 @@ export async function POST(request) {
               break;
             }
             console.warn(`[edge-tts] ${model} HTTP ${resp.status}: ${errTxt.slice(0, 160)}`);
-            if (resp.status === 400 && /api key not valid/i.test(errTxt)) break;
+            if (resp.status === 401 || resp.status === 403 || (resp.status === 400 && /api key not valid/i.test(errTxt))) {
+              markKeyRateLimited(apiKey, 3600000);
+              break;
+            }
             continue;
           }
 
@@ -177,6 +186,7 @@ export async function POST(request) {
           }
 
           if (pcmParts.length > 0) {
+            preferredKey = apiKey;
             const merged = Buffer.concat(pcmParts);
             return Response.json({
               status: "ok",
@@ -188,6 +198,10 @@ export async function POST(request) {
             });
           }
         } catch (err) {
+          if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+            markKeyRateLimited(apiKey, 90000);
+            break;
+          }
           console.warn(`[edge-tts] ${model} retry notice:`, err?.message || err);
         }
       }

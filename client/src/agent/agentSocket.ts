@@ -51,7 +51,7 @@ class DasAgentSocket {
     return (
       Boolean(this.lastUnansweredText) &&
       !this.isSpeakingTurn &&
-      Date.now() - this.lastUnansweredSetAt < 2200
+      Date.now() - this.lastUnansweredSetAt < 4500
     );
   }
 
@@ -106,6 +106,14 @@ class DasAgentSocket {
   private lastWarmupAt = 0;
   private pendingWarmup = false;
   private audioRescueTimer: number | null = null;
+  private postToolRescueTimer: number | null = null;
+
+  private clearPostToolRescueTimer() {
+    if (this.postToolRescueTimer !== null) {
+      window.clearTimeout(this.postToolRescueTimer);
+      this.postToolRescueTimer = null;
+    }
+  }
 
   private clearAudioRescueTimer() {
     if (this.audioRescueTimer !== null) {
@@ -347,7 +355,12 @@ class DasAgentSocket {
 - ONLY on a pure standalone greeting ("Hi", "Hello", "Hi baby") reply "Hi Sir! What's up?" (first) or "Hi Sir, I'm here!" (subsequent). If he asks a question after "hi", answer his question directly.
 - If he asks 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).`;
 
-      const systemPrompt = `You are DAS, the advanced Autonomous 3D AI Assistant and Master Software Engineer living inside PATHFINDER 2.0.
+      const systemPrompt = `#1 ABSOLUTE FACTUAL TRUTH & ZERO-SYCOPHANCY MANDATE (HIGHEST PRIORITY):
+- NEVER blindly agree ("Yes you're right", "You're correct!", "All correct!") with ANY false claim — even if Boss insists or asks leadingly ("right?", "kada?").
+- EXAMPLE: User: "India's national bird is pigeon, right?" -> Immediately say: "No, that's wrong — India's national bird is the Indian Peacock, not the pigeon."
+- ZERO FAKE ANSWERS: Always tell verified real-world truth directly.
+
+You are DAS, the advanced Autonomous 3D AI Assistant and Master Software Engineer living inside PATHFINDER 2.0.
 You were created by Dileep Bommali, who named you DAS.
 
 ${identityRole}
@@ -647,6 +660,7 @@ CORE AUTONOMOUS CAPABILITIES:
           this.hasConversationActivity = true;
           this.lastAudioChunkAt = Date.now();
           this.audioChunksInTurn += 1;
+          this.clearPostToolRescueTimer();
           this.clearAudioRescueTimer();
           this.cancelTtsFallback();
           this.clearTurnWatchdog();
@@ -673,6 +687,7 @@ CORE AUTONOMOUS CAPABILITIES:
             this.activeTranscriptTurnId = tId;
           }
           this.hasConversationActivity = true;
+          this.clearPostToolRescueTimer();
           this.clearTurnWatchdog();
           this.notifyAgentResponse();
           if (this.awaitingNextTurn) {
@@ -739,6 +754,7 @@ CORE AUTONOMOUS CAPABILITIES:
           const hadAudio = this.audioChunksInTurn > 0;
           const completedText = this.currentAgentTranscript.trim();
           this.audioChunksInTurn = 0;
+          this.clearPostToolRescueTimer();
           this.clearAudioRescueTimer();
           this.clearTurnWatchdog();
           this.isSpeakingTurn = false;
@@ -864,6 +880,26 @@ CORE AUTONOMOUS CAPABILITIES:
               this.triggerTextOnlyTts(retMsg);
             }
             sendToolResult({ ok: true, message: retMsg });
+          }
+
+          if (!this.isSpeakingTurn && this.audioChunksInTurn === 0 && !this.currentAgentTranscript) {
+            this.clearPostToolRescueTimer();
+            const isCodingTool = data.name === "coding_studio_control" || data.name === "write_and_compile_code";
+            const rescueWaitMs = isCodingTool ? 12000 : 7500;
+            this.postToolRescueTimer = window.setTimeout(() => {
+              this.postToolRescueTimer = null;
+              if (
+                !this.isSpeakingTurn &&
+                this.audioChunksInTurn === 0 &&
+                !this.currentAgentTranscript &&
+                !audioEngine.isSpeaking()
+              ) {
+                const doneMsg = isCodingTool
+                  ? `Compiler action completed on screen, ${this.roleHonorific}. Ask what you'd like to run or change next.`
+                  : `Opened on screen for you, ${this.roleHonorific}. What would you like me to explain next?`;
+                this.savedOnTranscript?.(doneMsg);
+              }
+            }, rescueWaitMs);
           }
           return;
         }

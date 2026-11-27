@@ -887,14 +887,18 @@ export const getCareerAgentResponse = (
     );
   }
 
-  // 5. Telugu / Tenglish Queries -> Understand natively, reply strictly in fluent English for Puck voice
-  const isTelugu =
+  // 5. Telugu / Tenglish Career Queries (strictly gated on career/Pathfinder intent — never agree to wrong general claims!)
+  const isCareerOrSiteQuery =
+    /(pathfinder|cgpa|backlog|branch|placement|resume|ats|interview|roadmap|blueprint|project|code|dsa|leetcode|github|skill|salary|package|company|role|rag|llm|vercel|render|antigravity|sar|internship|score|section|simulator|what-if|trajectory|workspace|sync|jd|tailor|arena|viva|cohort|fraud|radar|overview|dashboard|settings|profile|compiler|c\+\+|python|java|sql)/i.test(
+      text
+    );
+  const isTeluguCareer =
     /(naku|kavali|cheppu|ela|cheyyali|placement|udyogam|job|chudu|telugu|em\s*chey|salah|artham)/i.test(
       text
     );
-  if (isTelugu) {
+  if (isTeluguCareer && (isCareerOrSiteQuery || /\b(placement|udyogam|job|career|study|internship)\b/i.test(text))) {
     return (
-      `Absolutely, ${title}! Based on your ${branch} profile and ${cgpa} CGPA, solving two core DSA patterns daily and deploying one production blueprint from our catalog will put you in prime position for top engineering offers.` +
+      `Here is a practical step-by-step plan, ${title}: based on your ${branch} profile and ${cgpa} CGPA, solving two core DSA patterns daily and deploying one production blueprint from our catalog will put you in prime position for top engineering offers.` +
       `|||🚀 **Placement Acceleration Plan (${title}):**\n${top3Markdown}`
     );
   }
@@ -914,14 +918,14 @@ export const getCareerAgentResponse = (
     );
   }
 
-  // 6. General-knowledge guard vs Semantic RAG Grounded Answer
-  const isCareerOrSiteQuery =
-    /(pathfinder|cgpa|backlog|branch|placement|resume|ats|interview|roadmap|blueprint|project|code|dsa|leetcode|github|skill|salary|package|company|role|rag|llm|vercel|render|antigravity|sar|internship|score|section|simulator|what-if|trajectory|workspace|sync|jd|tailor|arena|viva|cohort|fraud|radar|overview|dashboard|settings|profile)/i.test(
-      text
-    );
-  if (!isCareerOrSiteQuery && /\b(who is|who was|tell me about|what is|history of|explain)\b/i.test(text)) {
+  // 6. General-knowledge & zero-fake verification guard vs Semantic RAG Grounded Answer
+  if (
+    !isCareerOrSiteQuery &&
+    (/\b(who is|who was|tell me about|what is|history of|explain|national|capital|president|prime minister|planet|bird|animal|country|agree)\b/i.test(text) ||
+      (String(message || "").trim().endsWith("?") && String(message || "").trim().split(/\s+/).length >= 3))
+  ) {
     return (
-      `I couldn't reach the live knowledge server just now, ${title}, so I won't guess or redirect you to unrelated project blueprints for "${String(message || "").slice(0, 80)}". Reconnect briefly and ask again for an accurate real-world answer!` +
+      `I couldn't reach the live knowledge server just now, ${title}, so I won't guess, blindly agree, or invent an answer for "${String(message || "").slice(0, 80)}". Reconnect briefly and ask again for a verified factual answer!` +
       `|||🌐 **Live Knowledge Lookup Reconnecting (${title}):** General-world questions are fully supported alongside Pathfinder — please resend once reconnected so I can fetch accurate facts without guessing.`
     );
   }

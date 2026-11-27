@@ -118,6 +118,31 @@ TABS_KNOWLEDGE: Dict[str, Dict[str, Any]] = {
         "how_to_use": "Find your department to discover core academic subjects most frequently tested during campus technical rounds.",
         "limitations": "Non-circuital branches (MECH, CIVIL) should focus on core departmental opportunities or follow the IT transition roadmap if targeting software roles."
     },
+    "interview": {
+        "title": "Live Coding & Viva Arena (Slide 03)",
+        "purpose": "Split-screen technical interview simulator combining an 11-language Online Compiler Studio, automated Time/Space Complexity Viva evaluation, Hiring Committee Verdicts, Company Mock Interviews, and STAR Project Defense.",
+        "widgets": [
+            "11-Language Live Compiler Editor (C, C++, Python, Java, JS, TS, SQL, Go, Rust, C#, PHP) with real sandbox execution and stdin.",
+            "Dynamic AI Coding Problem Generator & Complexity Viva Defense.",
+            "Hiring Committee Scorecards (Code Score + Viva Score -> STRONG HIRE / HIRE / NO HIRE).",
+            "Company Mock Interview & STAR Architecture Defense Drills."
+        ],
+        "data_sources": "Live isolated sandbox execution (/api/compile via Godbolt, Judge0 CE, Piston, and hardened SQLite) combined with strict zero-fake Gemini evaluation.",
+        "how_to_use": "Write and run your solution cleanly in the compiler, then explain time and space complexity aloud or in text to receive an honest hiring verdict.",
+        "limitations": "Empty starter skeletons, compile errors, or wrong outputs never receive passing scores."
+    },
+    "progress": {
+        "title": "My Progress Journey (Slide 06)",
+        "purpose": "Tracks real session history across ML placement readiness checks, ATS resume scans, Live Coding Arena verdicts, and mock interview scorecards.",
+        "widgets": [
+            "Readiness Score Trend & Milestone Timeline.",
+            "Completed ATS Audits, Coding Arena Verdicts & Mock Interview Scorecards.",
+            "Cross-session Progress Summary & Export Actions."
+        ],
+        "data_sources": "Persisted user snapshots, ATS evaluations, and interview/arena scorecards from SQLite & Supabase cloud sync.",
+        "how_to_use": "Review completed milestones and score trends after each mock round or resume update to verify measurable improvement.",
+        "limitations": "Reflects evaluations actually completed by your signed-in account or active session."
+    },
     "defense": {
         "title": "Project Defense Console",
         "purpose": "Interactive technical viva and interview simulator designed to test how well a candidate can defend their project code and architecture.",

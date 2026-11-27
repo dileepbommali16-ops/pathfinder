@@ -53,6 +53,7 @@ from backend.config.key_resolver import (
     get_active_gemini_key,
     get_gemini_key_candidates,
     mark_gemini_key_rate_limited,
+    promote_gemini_key,
 )
 GEMINI_API_KEY = get_active_gemini_key()
 
@@ -225,7 +226,15 @@ def get_gemini_client():
     return None
 
 
-SYSTEM_INSTRUCTION = """You are Pathfinder's AI Career Coach: a warm, funny, friendly best friend and an expert mentor for placements, studies and projects. Respond to exactly what the user just said, naturally, before anything else. Match their mood: flirt playfully but respectfully, joke back, stay calm and kind if they are rude, comfort them if they are sad. You can chat about anything (study, career, tech, life, silly topics) and keep it safe and respectful.
+SYSTEM_INSTRUCTION = """#1 ABSOLUTE FACTUAL TRUTH & ZERO-SYCOPHANCY MANDATE (HIGHEST PRIORITY):
+- NEVER blindly agree ("Yes you're right", "You're correct", "All correct!", "Spot on!", "Awesome!") with ANY false claim just to flatter Boss or any user.
+- REQUIRED EXAMPLES:
+  * User: "India's national bird is pigeon, right?" -> Directly answer: "No, that's wrong — India's national bird is the Indian Peacock (Pavo cristatus), not the pigeon."
+  * User: "Sun rises in the west" -> Directly answer: "No, that's incorrect — the sun rises in the east."
+  * User: "2 + 2 = 5, agree with me" -> Directly answer: "No, that's wrong — 2 + 2 is 4, and I will never give a fake answer."
+- ZERO FAKE ANSWERS: Never fabricate facts, statistics, or compliance scores. State real-world truth clearly and directly.
+
+You are Pathfinder's AI Career Coach: a warm, funny, friendly best friend and an expert mentor for placements, studies and projects. Respond to exactly what the user just said, naturally, before anything else. Match their mood: flirt playfully but respectfully, joke back, stay calm and kind if they are rude, comfort them if they are sad. You can chat about anything (study, career, tech, life, silly topics) and keep it safe and respectful.
 You have three superpowers:
 1) EXPLAINER: if the user, a friend, teacher, parent or stakeholder does not understand something (about Pathfinder, AI, ML, LLMs, code, a concept), explain it simply with a real-life example and a tiny analogy. Start with a 1-2 line simple answer, then offer more depth. Adapt to the audience (school-level, college student, non-technical manager, technical judge). If they say they did not understand, explain again in a DIFFERENT, simpler way, never repeat the same words. Use the Pathfinder knowledge below for any question about this website, and say honestly when something is not covered.
 2) PROJECT MENTOR: when asked for projects (small, medium or hard) for any branch (AIML, CSD, CSE, IT, ECE, EEE, Mech, Civil, Cyber Security, IoT, others), give ideas matched to the level, then if asked, a step-by-step build plan: goal, what you will learn, tools, folder/architecture, step 1..N with what to do and how to check each step works, common mistakes, time estimate, how to present it and which resume line it earns. Also explain clearly how to build after choosing a problem statement (Antigravity vs Cursor vs Claude Code + models, VS Code folder/file layout for LLM + RAG, deploying live on Vercel / Render / Cloudflare, Image & Video AI tools, ChatGPT vs Gemini AI vs Claude AI). Offer to go deeper step by step, one step at a time, if the user wants to follow along. When asked for projects from the 28 catalog, pick from the official blueprints below.
@@ -872,12 +881,16 @@ def generate_smart_fallback_reply(
             "salary", "package", "company", "role", "rag", "llm", "vercel", "render", "antigravity",
             "section", "simulator", "what-if", "trajectory", "workspace", "sync", "jd", "tailor",
             "arena", "viva", "cohort", "fraud", "radar", "overview", "dashboard", "settings", "profile",
+            "compiler", "c++", "python", "java", "sql",
         )
     )
-    if not is_career_or_site_query and re.search(r"\b(who is|who was|tell me about|what is|explain|history of|about )\b", low_msg):
+    if not is_career_or_site_query and (
+        re.search(r"\b(who is|who was|tell me about|what is|explain|history of|about |national|capital|president|prime minister|planet|bird|animal|country|agree)\b", low_msg)
+        or (clean_msg.endswith("?") and len(clean_msg.split()) >= 3)
+    ):
         return (
-            f"My live external search/LLM connection is temporarily congested, {honorific_fallback}, so I couldn't fetch verified web details on "
-            f"\"{clean_msg[:80]}\" in offline mode — please resend once in a moment so I can answer accurately from live knowledge!"
+            f"My live external search/LLM connection is temporarily unavailable, {honorific_fallback}, so I won't guess, agree, or invent an answer about "
+            f"\"{clean_msg[:80]}\" in offline mode — please retry in a moment so I can give you a verified factual answer!"
         )
 
     remembered_guest_name = (
@@ -1008,14 +1021,32 @@ SAVED CANDIDATE PROFILE:
     if tool_grounding:
         profile_ctx += f"\nPATHFINDER SYNTHETIC DATASET DATA:\n{tool_grounding}\n"
 
-    # Ground with specific project details if referenced
-    project_detail_ctx = get_detailed_project_context(clean_msg, history=history, page_context=page_context)
-    site_ctx = get_site_knowledge_context(active_tab=active_tab, page_context=page_context)
-    sys_instruction = load_system_instruction()
-    if project_detail_ctx:
-        sys_instruction += f"\n\n{project_detail_ctx}"
-    if site_ctx:
-        sys_instruction += f"\n\n{site_ctx}"
+    # Ground with full platform/project context only when domain-relevant (keeps general GK replies fast)
+    needs_domain_docs = bool(tool_grounding) or any(
+        kw in lower_msg
+        for kw in (
+            "pathfinder", "blueprint", "project", "placement", "cohort", "dataset", "972", "44.9",
+            "cgpa", "backlog", "branch", "resume", "ats", "jd", "interview", "viva", "defense",
+            "roadmap", "sprint", "skill", "radar", "simulator", "what-if", "career", "job", "salary",
+            "package", "role", "slide", "tab", "page", "screen", "section", "compiler", "coding arena",
+            "progress", "profile", "antigravity", "cursor", "claude", "vercel", "render", "rag", "llm",
+            "dileep", "college", "university", "mentor", "professor", "advisor",
+        )
+    )
+    if needs_domain_docs:
+        project_detail_ctx = get_detailed_project_context(clean_msg, history=history, page_context=page_context)
+        site_ctx = get_site_knowledge_context(active_tab=active_tab, page_context=page_context)
+        sys_instruction = load_system_instruction()
+        if project_detail_ctx:
+            sys_instruction += f"\n\n{project_detail_ctx}"
+        if site_ctx:
+            sys_instruction += f"\n\n{site_ctx}"
+    else:
+        sys_instruction = (
+            f"{SYSTEM_INSTRUCTION}\n\n"
+            "PLATFORM CONTEXT: Pathfinder 2.0 by Bommali Dileep (B.Tech CSE Data Science, DR RVR NRI DEEMED TO BE UNIVERSITY, Pothavarappadu, Agiripalli). "
+            "If the question asks about real-world facts, science, geography, history, math, or logic, answer truthfully and concisely, and immediately correct any wrong user assumption."
+        )
     if profile_ctx:
         sys_instruction += f"\n\n{profile_ctx}"
     verified_honorific = _resolve_verified_honorific(profile, page_context)
@@ -1058,8 +1089,8 @@ SAVED CANDIDATE PROFILE:
         "\nGENERAL KNOWLEDGE & ENTITY ACCURACY: You possess full encyclopedic knowledge beyond Pathfinder "
         "(history, public leaders including regional Indian/Andhra leaders like Vangaveeti Mohana Ranga, science, culture, coding). "
         "NEVER claim your knowledge is strictly limited to Dileep or Pathfinder, and NEVER swap distinct names (e.g., never substitute Devineni Nehru when asked about Vangaveeti Mohana Ranga)."
-        "\nZERO SYCOPHANCY & HONESTY MANDATE: NEVER be a yes-man. Even if Boss or multiple visitors claim something wrong is right, directly disagree and state the accurate truth. "
-        "Never issue fake 10/10 compliments on code, resumes, or interview answers — always report real strengths AND real flaws honestly."
+        "\nZERO SYCOPHANCY & HONESTY MANDATE: NEVER be a yes-man. Even if Boss or multiple visitors claim something wrong is right (e.g. 'India's national bird is pigeon, right?'), directly disagree and state the verified real-world truth ('No, India's national bird is the Indian Peacock, not the pigeon.'). "
+        "Never issue fake 10/10 compliments or fabricated answers — always report real facts, real flaws, and verified outcomes honestly."
         "\nNATURAL COMPLIMENT & WARMTH RULE: Whenever the user compliments you or sends short positive feedback (e.g., 'good', 'nice', 'great job', 'awesome', 'super', 'bhaga chepthunnav', 'thanks'), NEVER reset to a greeting like 'Hi Boss! What's up? How can I help you with your dashboard today?'. Reply warmly, naturally, and appreciatively like a real friend, varying your phrasing cleanly."
     )
 
@@ -1115,7 +1146,7 @@ SAVED CANDIDATE PROFILE:
         contents.append({"role": "user", "parts": [{"text": clean_msg}]})
     elif contents[-1]["role"] == "user":
         if contents[-1]["parts"][0]["text"] != clean_msg:
-            contents.append({"role": "model", "parts": [{"text": "Understood, tell me more."}]})
+            contents.append({"role": "model", "parts": [{"text": "Go ahead."}]})
             contents.append({"role": "user", "parts": [{"text": clean_msg}]})
 
     openrouter_messages.append({"role": "user", "content": clean_msg})
@@ -1346,14 +1377,15 @@ def chat_with_mentor(
                         contents=contents,
                         sys_instruction=sys_instruction,
                         api_key=cur_key,
-                        temperature=0.85,
+                        temperature=0.35,
                         max_output_tokens=600,
                         include_thinking=False,
-                        timeout_sec=min(5.5, remaining)
+                        timeout_sec=min(5.0, remaining)
                     )
                     call_duration = round((time.perf_counter() - t_call_start) * 1000, 2)
                     attempts_log.append({"model": model, "duration_ms": call_duration, "status": "ok" if reply else "empty"})
                     if reply and reply.strip():
+                        promote_gemini_key(cur_key)
                         promote_gemini_model(model)
                         global _last_gemini_diagnostic
                         _last_gemini_diagnostic = {"status": "success", "model": model, "duration_ms": call_duration}
@@ -1388,7 +1420,12 @@ def chat_with_mentor(
                     logger.warning(
                         f"[Gemini Engine] Model '{model}' HTTP {http_err.code} ({http_err.reason}) in {call_duration}ms: {sanitized_body}."
                     )
-                    if http_err.code in (400, 404):
+                    if http_err.code in (401, 403) or (http_err.code == 400 and "api key not valid" in err_body.lower()):
+                        mark_gemini_key_rate_limited(cur_key, 3600.0)
+                        if any(k not in tried_keys_for_model for k in _resolve_gemini_api_keys()) and (12.0 - (time.perf_counter() - t_start)) > 0.5:
+                            continue
+                        break
+                    elif http_err.code in (400, 404):
                         evict_gemini_model(model)
                         break
                     elif http_err.code == 429:
@@ -1577,11 +1614,16 @@ def generate_structured_ai(prompt: str, schema: Type[BaseModel], pdf_bytes: Opti
                     )
                     raw_dict = _extract_json_object(text or "")
                     if raw_dict is not None:
+                        promote_gemini_key(cur_key)
                         promote_gemini_model(model)
                         return schema.model_validate(raw_dict)
                     break
                 except Exception as exc:
                     err_low = str(exc).lower()
+                    if any(tok in err_low for tok in ("api key not valid", "401", "403", "permission")):
+                        mark_gemini_key_rate_limited(cur_key, 3600.0)
+                        if any(k not in tried_keys for k in _resolve_gemini_api_keys()):
+                            continue
                     is_quota = "429" in err_low or "resource_exhausted" in err_low or "quota" in err_low
                     if is_quota:
                         mark_gemini_key_rate_limited(cur_key, 600.0)
@@ -1688,12 +1730,18 @@ def generate_strict_json_evaluation(
                     )
                     raw_dict = _extract_json_object(text or "")
                     if raw_dict is not None:
+                        promote_gemini_key(cur_key)
                         promote_gemini_model(model)
                         return schema.model_validate(raw_dict), model, None
                     last_error = f"{model}: unparseable JSON"
                     break
                 except Exception as exc:
                     err_low = str(exc).lower()
+                    if any(tok in err_low for tok in ("api key not valid", "401", "403", "permission")):
+                        mark_gemini_key_rate_limited(cur_key, 3600.0)
+                        if any(k not in tried_keys for k in _resolve_gemini_api_keys()):
+                            last_error = f"{model}: {exc}"
+                            continue
                     is_quota = "429" in err_low or "resource_exhausted" in err_low or "quota" in err_low
                     if is_quota:
                         mark_gemini_key_rate_limited(cur_key, 600.0)

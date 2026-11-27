@@ -1,6 +1,6 @@
 // client/src/agent/toolRunner.ts
 import { Type, FunctionDeclaration } from "@google/genai";
-import { codingStudioController } from "./codingStudioController";
+import { codingStudioController, normalizeLanguage } from "./codingStudioController";
 import {
   DEFAULT_PROJECT_CATALOG,
   findBestMatchingBlueprint,
@@ -136,8 +136,23 @@ const TAB_ALIASES: Record<string, string[]> = {
   cohort: ["cohort & roadmap", "cohort", "analytics"],
 };
 
+function syncLivePageContext(patch: Record<string, any>) {
+  if (typeof window === "undefined") return;
+  const prev = (window as any).__DAS_PAGE_CONTEXT__ || {};
+  (window as any).__DAS_PAGE_CONTEXT__ = {
+    ...prev,
+    ...patch,
+    timestamp: Date.now(),
+  };
+}
+
 function goToTab(tabRaw: string, navigate?: (path: string) => void) {
   const tab = norm(tabRaw).replace(/\s+/g, "-");
+  const aliasLabel = TAB_ALIASES[tab]?.[0] || tab;
+  syncLivePageContext({
+    activeTab: tab,
+    tabTitle: aliasLabel.replace(/\b\w/g, (c) => c.toUpperCase()),
+  });
   emitCustomEvent("pathfinder:agent-action", {
     toolName: "navigate_dashboard_tab",
     args: { tabName: tab }
@@ -158,12 +173,14 @@ function goToTab(tabRaw: string, navigate?: (path: string) => void) {
 
 const CLIENT_TAB_INTENTS: Array<{ route: string; patterns: RegExp[] }> = [
   { route: "focus_on_das", patterns: [/\bfocus\s+on\s+das\b/, /\bhide\s+dashboard\b/] },
-  { route: "show_dashboard", patterns: [/\bshow\s+(?:the\s+)?dashboard\b/, /\bexit\s+focus\b/] },
+  { route: "show_dashboard", patterns: [/\bshow\s+(?:the\s+)?dashboard\b/, /\bexit\s+focus\b/, /\bdashboard\s+ki\s+vellu\b/] },
   {
     route: "projects",
     patterns: [
       /\b(?:open|go\s+to|show|switch\s+to|navigate(?:\s+to)?)\s+(?:the\s+)?(?:project\s+)?blueprints?\b/,
       /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?projects\b/,
+      /\b(?:project\s+)?blueprints?\s+(?:open\s+chey|open\s+chesi|chupinchu)\b/,
+      /\bslide\s*0?4\b/,
     ],
   },
   {
@@ -171,18 +188,32 @@ const CLIENT_TAB_INTENTS: Array<{ route: string; patterns: RegExp[] }> = [
     patterns: [
       /\b(?:open|go\s+to|start|launch|show|switch\s+to)\s+(?:the\s+)?(?:live\s+coding(?:\s*&\s*viva)?(?:\s+arena)?|coding\s+arena|viva\s+arena|mock\s+interview)\b/,
       /\b(?:open|go\s+to|start|show|switch\s+to)\s+(?:the\s+)?(?:project\s+)?defense\b/,
+      /\b(?:coding\s+arena|viva\s+arena|mock\s+interview)\s+(?:open\s+chey|open\s+chesi|chupinchu)\b/,
+      /\bslide\s*0?3\b/,
     ],
   },
   {
     route: "resume",
     patterns: [
-      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:1[\s-]?click\s+)?(?:jd(?:\s*&\s*resume)?(?:\s+tailor|\s+matcher)?|(?:ats\s+)?resume(?:\s+studio|\s+tailor)?)\b/,
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:1[\s-]?click\s+)?(?:jd(?:\s*&\s*resume)?(?:\s+tailor|\s+matcher|\s+lab)?|(?:ats\s+)?resume(?:\s+studio|\s+tailor|\s+lab)?)\b/,
+      /\b(?:resume(?:\s+studio|\s+tailor|\s+lab)?|jd\s*(?:tailor|matcher|lab))\s+(?:open\s+chey|open\s+chesi|chupinchu)\b/,
+      /\bslide\s*0?2\b/,
     ],
   },
   {
     route: "analytics",
     patterns: [
-      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:cohort(?:\s*&\s*roadmap|\s+analytics)?|(?:6-week\s+)?roadmap)\b/,
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:the\s+)?(?:cohort(?:\s*&\s*roadmap|\s+analytics)?|dataset(?:\s*&\s*roadmap)?|(?:6-week\s+)?roadmap)\b/,
+      /\b(?:cohort|roadmap|analytics)\s+(?:open\s+chey|open\s+chesi|chupinchu)\b/,
+      /\bslide\s*0?5\b/,
+    ],
+  },
+  {
+    route: "progress",
+    patterns: [
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:my\s+|the\s+)?progress(?:\s+journey)?\b/,
+      /\b(?:my\s+)?progress\s+(?:open\s+chey|open\s+chesi|chupinchu)\b/,
+      /\bslide\s*0?6\b/,
     ],
   },
   {
@@ -201,11 +232,18 @@ const CLIENT_TAB_INTENTS: Array<{ route: string; patterns: RegExp[] }> = [
   },
   {
     route: "profile",
-    patterns: [/\b(?:open|go\s+to|show|switch\s+to)\s+(?:my\s+|the\s+)?profile(?:\s+settings)?\b/],
+    patterns: [
+      /\b(?:open|go\s+to|show|switch\s+to)\s+(?:my\s+|the\s+)?profile(?:\s+settings)?\b/,
+      /\bprofile\s+(?:open\s+chey|open\s+chesi|chupinchu)\b/,
+      /\bslide\s*0?7\b/,
+    ],
   },
   {
     route: "overview",
-    patterns: [/\b(?:open|go\s+to|return\s+to)\s+(?:the\s+)?(?:overview|dashboard)\b/],
+    patterns: [
+      /\b(?:open|go\s+to|return\s+to)\s+(?:the\s+)?(?:overview|dashboard)\b/,
+      /\bslide\s*0?1\b/,
+    ],
   },
 ];
 
@@ -215,6 +253,12 @@ export function navigateToBlueprintOnScreen(
 ) {
   const { project, index } = findBestMatchingBlueprint(rawQueryOrId, DEFAULT_PROJECT_CATALOG);
   const steps = buildProjectExecutionSteps(project, index);
+  syncLivePageContext({
+    activeTab: "projects",
+    tabTitle: "Project Blueprints",
+    activeProject: project.title,
+    projectTitle: project.title,
+  });
   if (typeof window !== "undefined") {
     (window as any).__DAS_PENDING_PROJECT_HIGHLIGHT__ = {
       projectId: project.id,
@@ -306,6 +350,42 @@ export function tryExecuteClientAutomationIntent(
   }
   if (/\b(?:scroll\s+(?:to\s+)?top|top\s+of\s+page|modatiki\s+vellu)\b/.test(clean)) {
     window.scrollTo({ top: 0, behavior: "smooth" });
+    return true;
+  }
+
+  // Instant Coding Studio Compiler Intents (<50ms client-side drawer & run control)
+  if (/\b(?:close|exit|hide)\s+(?:the\s+)?(?:compiler|coding\s*studio|code\s*editor)\b/.test(clean) || /\bcompiler\s+close\s+chey\b/.test(clean)) {
+    syncLivePageContext({ compilerOpen: false });
+    void codingStudioController.execute({ action: "close" });
+    return true;
+  }
+  if (/\b(?:stop)\s+(?:the\s+)?(?:code|execution|running|compiler)\b/.test(clean)) {
+    void codingStudioController.execute({ action: "stop_code" });
+    return true;
+  }
+  if (/^\s*(?:run|execute|compile(?:\s+and\s+run)?)\s+(?:the\s+)?(?:code|program)\s*$/i.test(clean) || /\bcode\s+run\s+chey\b/.test(clean)) {
+    void codingStudioController.execute({ action: "run_code" });
+    return true;
+  }
+  const openCompilerMatch =
+    clean.match(
+      /\b(?:open|launch|start|show|switch\s+to)\s+(?:the\s+)?(?:(c\+\+|cpp|c#|csharp|python|py|java|javascript|js|typescript|ts|sql|sqlite|go|golang|rust|php|c)\s+)?(?:compiler|coding\s*studio|code\s*editor)\b/i
+    ) ||
+    clean.match(
+      /\b(?:(c\+\+|cpp|c#|csharp|python|py|java|javascript|js|typescript|ts|sql|sqlite|go|golang|rust|php|c)\s+)?(?:compiler|coding\s*studio|code\s*editor)\s+(?:open\s+chey|open\s+chesi|chupinchu)\b/i
+    );
+  if (openCompilerMatch) {
+    const rawLang = (openCompilerMatch[1] || "python").toLowerCase();
+    const detectedLang = normalizeLanguage(rawLang);
+    syncLivePageContext({
+      compilerOpen: true,
+      compilerLanguage: detectedLang,
+    });
+    void codingStudioController.execute({
+      action: openCompilerMatch[1] ? "switch_language" : "open",
+      language: detectedLang,
+      auto_run: false,
+    });
     return true;
   }
 

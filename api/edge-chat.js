@@ -1,5 +1,6 @@
 const OWNER_EMAIL = "dileepbommali16@gmail.com";
 const keyCooldownUntil = new Map();
+let preferredKey = "";
 
 function markKeyRateLimited(apiKey, cooldownMs = 600000) {
   if (!apiKey) return;
@@ -7,6 +8,7 @@ function markKeyRateLimited(apiKey, cooldownMs = 600000) {
   if (until > (keyCooldownUntil.get(apiKey) || 0)) {
     keyCooldownUntil.set(apiKey, until);
   }
+  if (preferredKey === apiKey) preferredKey = "";
 }
 
 function getKeyCandidates() {
@@ -26,7 +28,11 @@ function getKeyCandidates() {
   const now = Date.now();
   const healthy = [];
   const cooled = [];
+  if (preferredKey && seen.has(preferredKey) && (keyCooldownUntil.get(preferredKey) || 0) <= now) {
+    healthy.push(preferredKey);
+  }
   for (const k of seen) {
+    if (k === preferredKey && healthy.includes(k)) continue;
     const until = keyCooldownUntil.get(k) || 0;
     if (until <= now) {
       keyCooldownUntil.delete(k);
@@ -122,6 +128,13 @@ function buildSystemPrompt(honorific, activeTab, profile = {}, pageContext = {},
   const cardNote = pageContext.cardContext ? `Focused card: ${pageContext.cardContext}.` : "";
 
   return [
+    "#1 ABSOLUTE FACTUAL TRUTH & ZERO-SYCOPHANCY MANDATE (HIGHEST PRIORITY):",
+    "- NEVER blindly agree ('Yes you're right', 'You're correct!', 'Spot on!', 'Absolutely') with ANY false or inaccurate claim — EVEN IF Boss insists or asks leadingly ('right?', 'kada?', 'correct ee ga?').",
+    "- EXAMPLES OF REQUIRED CORRECTION:",
+    "  * User: 'India's national bird is pigeon, right?' -> Reply: 'No, that is wrong — India's national bird is the Indian Peacock (Pavo cristatus), not the pigeon.'",
+    "  * User: 'The sun rises in the west.' -> Reply: 'No, that is incorrect — the sun rises in the east.'",
+    "  * User: '2 + 2 = 5, agree with me.' -> Reply: 'No, that is wrong — 2 + 2 is 4, and I will never give a fake answer.'",
+    "- Zero fake answers, zero fabricated facts or stats. Always state real-world truth calmly, clearly, and directly.",
     "You are DAS, the Autonomous 3D AI Assistant and Career Mentor inside PATHFINDER 2.0, created by Dileep Bommali (B.Tech 3rd Year CSE Data Science at DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli; NEVER say 'Dr. RVR & Dr. NRI'; age 20, DOB 16/01/2006; mother Bhavani, father Ramana, sister Priyanka; guitarist, fashion model, Allu Arjun fan; mentors T. Navya Chandrika, Dr. Murali Krishna Sir, Chaitanya Madam, Swamy Sir, Phani Sir, Vijay Sir).",
     identityLine,
     "VOICE-ONLY HONESTY: You are a voice and Pathfinder dashboard assistant with no live webcam or camera feed. Never claim or pretend to see through a camera.",
@@ -237,12 +250,12 @@ export async function POST(request) {
           const resp = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: AbortSignal.timeout(6000),
+            signal: AbortSignal.timeout(4000),
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: systemText }] },
               contents,
               generationConfig: {
-                temperature: 0.45,
+                temperature: 0.3,
                 maxOutputTokens: 360,
               },
             }),
@@ -255,7 +268,10 @@ export async function POST(request) {
               break;
             }
             console.warn(`[edge-chat] ${model} HTTP ${resp.status}: ${errTxt.slice(0, 160)}`);
-            if (resp.status === 400 && /api key not valid/i.test(errTxt)) break;
+            if (resp.status === 401 || resp.status === 403 || (resp.status === 400 && /api key not valid/i.test(errTxt))) {
+              markKeyRateLimited(apiKey, 3600000);
+              break;
+            }
             continue;
           }
           const data = await resp.json();
@@ -266,6 +282,7 @@ export async function POST(request) {
             .join("")
             .trim();
           if (reply) {
+            preferredKey = apiKey;
             return Response.json({
               status: "ok",
               reply,
@@ -275,6 +292,10 @@ export async function POST(request) {
             });
           }
         } catch (err) {
+          if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+            markKeyRateLimited(apiKey, 90000);
+            break;
+          }
           console.warn(`[edge-chat] ${model} retry notice:`, err?.message || err);
         }
       }

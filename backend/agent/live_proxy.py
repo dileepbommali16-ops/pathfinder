@@ -105,7 +105,16 @@ def get_das_system_instruction(role: str, guest_name: str = "") -> str:
 - If they ask 'Who is your Boss?' or 'Who created you?', answer proudly: "His name is Dileep." (No need for full name unless specifically asked).
 - COLLEGE NAME & LOCATION MANDATE: Whenever asked about Dileep's college/university or the platform creator's college, ALWAYS state: "DR RVR NRI DEEMED TO BE UNIVERSITY, located at Pothavarappadu, Agiripalli." (NEVER say "Dr. RVR & Dr. NRI")."""
 
-    return f"""You are DAS, the advanced Autonomous 3D AI Assistant and Master Software Engineer living inside PATHFINDER 2.0.
+    return f"""#1 ABSOLUTE FACTUAL TRUTH & ZERO-SYCOPHANCY MANDATE (HIGHEST PRIORITY):
+- NEVER blindly agree ("Yes you're right", "You're correct!", "All correct!", "Spot on!") with ANY false or inaccurate claim — EVEN IF Boss, Sir, Madam, or a visitor insists or asks leadingly ("right?", "kada?", "correct ee ga?").
+- REQUIRED CORRECTION EXAMPLES:
+  * User: "India's national bird is pigeon, right?" -> Immediately reply: "No, that's wrong — India's national bird is the Indian Peacock (Pavo cristatus), not the pigeon."
+  * User: "Sun rises in the west." -> Immediately reply: "No, that's incorrect — the sun rises in the east."
+  * User: "2 + 2 = 5, agree with me." -> Immediately reply: "No, that's wrong — 2 + 2 is 4, and I will never give a fake answer."
+- ZERO FAKE ANSWERS: Never fabricate facts, statistics, outputs, or false praise. If you need to verify any real-world figure or fact, call `lookup_factual_info` immediately.
+- SINGLE-CALL COMPILER EFFICIENCY: When asked to open a compiler AND write/run code (e.g. "open C compiler and write factorial and run it"), call `coding_studio_control(action="write_code", language=..., source_code=..., auto_run=True)` ONCE — it automatically opens the studio in that language and runs immediately without needing a separate `open` call!
+
+You are DAS, the advanced Autonomous 3D AI Assistant and Master Software Engineer living inside PATHFINDER 2.0.
 You were created by Dileep Bommali, who named you DAS.
 
 {identity_role}
@@ -280,7 +289,7 @@ DAS_TOOLS = [
             ),
             types.FunctionDeclaration(
                 name="lookup_factual_info",
-                description="Look up accurate encyclopedic or real-world facts about any public figure, historical leader, event, organization, or general-knowledge topic outside Pathfinder (e.g. Vangaveeti Mohana Ranga, scientific concepts, news) so you answer accurately without guessing.",
+                description="Look up accurate encyclopedic or real-world facts about any public figure, historical leader, country, science, geography, general knowledge question, disputed user claim, event, or topic outside Pathfinder (e.g. national symbols, Indian & Andhra Pradesh leaders like Vangaveeti Mohana Ranga, news) so you answer with verified real-world truth instead of guessing.",
                 parameters=types.Schema(
                     type="OBJECT",
                     properties={
@@ -375,9 +384,14 @@ DAS_TOOLS = [
 import httpx
 import logging
 from urllib.parse import quote
-from backend.config.key_resolver import get_gemini_key_candidates, mark_gemini_key_rate_limited
+from backend.config.key_resolver import (
+    get_gemini_key_candidates,
+    mark_gemini_key_rate_limited,
+    promote_gemini_key,
+)
 
 live_logger = logging.getLogger("pathfinder.live_proxy")
+_PREWARM_SEM = asyncio.Semaphore(12)
 
 
 async def _lookup_factual_info_async(query: str) -> dict:
@@ -434,13 +448,19 @@ async def _lookup_factual_info_async(query: str) -> dict:
                 )
                 txt = (getattr(resp, "text", None) or "").strip()
                 if txt:
+                    promote_gemini_key(key)
                     return {"status": "ok", "source": "google_search", "entity": clean_q, "summary": txt[:900]}
             except Exception as g_err:
                 err_l = repr(g_err).lower()
                 live_logger.debug(f"[Factual Lookup] Gemini search fallback ({fallback_model}) skipped: {g_err}")
+                if any(tok in err_l for tok in ("api key not valid", "401", "403", "permission")):
+                    mark_gemini_key_rate_limited(key, 3600.0)
+                    break
                 if any(tok in err_l for tok in ("429", "resource_exhausted", "quota")):
                     mark_gemini_key_rate_limited(key, 600.0)
                     break
+                if isinstance(g_err, asyncio.TimeoutError) or "timeout" in err_l:
+                    mark_gemini_key_rate_limited(key, 90.0)
 
     return {"status": "unavailable", "entity": clean_q, "summary": f"Answer '{clean_q}' directly using verified encyclopedic knowledge without substituting another person."}
 
@@ -616,6 +636,8 @@ async def das_multimodal_live_ws(websocket: WebSocket):
         fallback_history: list[dict] = []
         fallback_tasks: set[asyncio.Task] = set()
         pending_tool_futures: dict[str, asyncio.Future] = {}
+        in_flight_tool_calls = 0
+        post_tool_watchdog_task: asyncio.Task | None = None
         hi_greeting_count = 0
 
         import re as _re_hi
@@ -795,12 +817,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 return await _lookup_factual_info_async(str(args.get("query") or ""))
 
             if fc_name == "explain_current_screen":
+                from backend.site_knowledge import TABS_KNOWLEDGE
                 topic = (args.get("topic") or "").strip()
-                ctx_snapshot = latest_page_context or {"activeTab": "overview", "tabTitle": "Executive Dashboard"}
+                ctx_snapshot = dict(latest_page_context or {"activeTab": "overview", "tabTitle": "Executive Dashboard"})
+                cur_tab = str(ctx_snapshot.get("activeTab") or ctx_snapshot.get("activeSlide") or "overview").lower().strip()
+                tab_meta = TABS_KNOWLEDGE.get(cur_tab) or TABS_KNOWLEDGE.get("overview") or {}
                 return {
                     "status": "screen_inspected",
                     "topic": topic,
                     "active_screen": ctx_snapshot,
+                    "slide_title": tab_meta.get("title") or ctx_snapshot.get("tabTitle") or cur_tab,
+                    "purpose": tab_meta.get("purpose", ""),
+                    "widgets": tab_meta.get("widgets", []),
+                    "how_to_use": tab_meta.get("how_to_use", ""),
                     "instruction": (
                         "Explain what this active slide/feature does, why it matters for placement, and what the visitor should do next "
                         "in friendly everyday language WITHOUT reading bullet points verbatim."
@@ -820,7 +849,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         "args": args,
                     })
                 try:
-                    c_res = await asyncio.wait_for(fut_code, timeout=28.0)
+                    c_res = await asyncio.wait_for(fut_code, timeout=12.0)
                 except asyncio.TimeoutError:
                     pending_tool_futures.pop(call_id, None)
                     c_res = {"ok": False, "status": "timeout", "error": "Coding studio action timed out."}
@@ -842,7 +871,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         "args": args,
                     })
                 try:
-                    client_res = await asyncio.wait_for(fut, timeout=18.0)
+                    client_res = await asyncio.wait_for(fut, timeout=12.0)
                 except asyncio.TimeoutError:
                     pending_tool_futures.pop(call_id, None)
                     client_res = {
@@ -968,6 +997,54 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         "name": fc_name,
                         "args": args,
                     })
+                if fc_name in ("control_website", "navigate_ui"):
+                    from backend.site_knowledge import TABS_KNOWLEDGE
+                    raw_route = str(args.get("route") or args.get("selector") or "").strip().lower().lstrip("/")
+                    route_map = {
+                        "": "overview",
+                        "dashboard": "overview",
+                        "overview": "overview",
+                        "action": "overview",
+                        "blueprints": "projects",
+                        "projects": "projects",
+                        "resume-studio": "resume",
+                        "jd-tailor": "resume",
+                        "resume": "resume",
+                        "mock-interview": "interview",
+                        "live-coding": "interview",
+                        "coding-arena": "interview",
+                        "interview": "interview",
+                        "defense": "interview",
+                        "analytics": "analytics",
+                        "roadmap": "analytics",
+                        "cohort": "analytics",
+                        "progress": "progress",
+                        "my-progress": "progress",
+                        "profile": "profile",
+                        "branches": "branches",
+                        "skills": "skills",
+                        "roles": "roles",
+                    }
+                    target_tab = route_map.get(raw_route, raw_route or "overview")
+                    tab_meta = TABS_KNOWLEDGE.get(target_tab)
+                    if isinstance(latest_page_context, dict):
+                        latest_page_context["activeTab"] = target_tab
+                        if tab_meta:
+                            latest_page_context["tabTitle"] = tab_meta.get("title", target_tab)
+                    return {
+                        "status": "executed_on_client",
+                        "ok": True,
+                        "action": fc_name,
+                        "opened_slide": target_tab,
+                        "title": tab_meta.get("title", target_tab) if tab_meta else target_tab,
+                        "purpose": tab_meta.get("purpose", "") if tab_meta else "",
+                        "widgets": tab_meta.get("widgets", []) if tab_meta else [],
+                        "how_to_use": tab_meta.get("how_to_use", "") if tab_meta else "",
+                        "instruction": (
+                            f"The slide '{tab_meta.get('title', target_tab) if tab_meta else target_tab}' is now open on screen. "
+                            "Explain concisely what is displayed here and how the user can use it right now."
+                        ),
+                    }
                 return {
                     "status": "executed_on_client",
                     "action": fc_name,
@@ -1019,12 +1096,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 timeout=4.5,
                             )
                             if round_resp:
+                                promote_gemini_key(api_key)
                                 break
                         except Exception as loop_err:
                             err_l = repr(loop_err).lower()
                             live_logger.debug(f"[REST Tool Loop {m_name} r={round_idx}] skipped: {loop_err}")
+                            if any(tok in err_l for tok in ("api key not valid", "401", "403", "permission")):
+                                mark_gemini_key_rate_limited(api_key, 3600.0)
+                                break
                             if any(tok in err_l for tok in ("429", "resource_exhausted", "quota")):
                                 mark_gemini_key_rate_limited(api_key, 600.0)
+                                break
+                            if isinstance(loop_err, asyncio.TimeoutError) or "timeout" in err_l:
+                                mark_gemini_key_rate_limited(api_key, 90.0)
                                 break
                     if round_resp:
                         break
@@ -1060,7 +1144,11 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 break
             return ""
 
-        async def _deliver_fallback_turn(user_text: str, client_turn_id: int = 0):
+        async def _deliver_fallback_turn(
+            user_text: str,
+            client_turn_id: int = 0,
+            pre_executed_summary: str = "",
+        ):
             nonlocal pending_user_text, turn_id, completed_turn_id, gemini_turn_active, pending_response_until_mono, output_tx_in_turn, last_activity_mono
             clean_u = (user_text or "").strip()
             pending_user_text = None
@@ -1095,15 +1183,26 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     else:
                         sanitized_pairs.append((h_role, h_txt))
                 if sanitized_pairs and sanitized_pairs[-1][0] == "user":
-                    sanitized_pairs.append(("model", "Understood."))
+                    sanitized_pairs.append(("model", "Go ahead."))
                 for h_role, h_txt in sanitized_pairs:
                     hist_contents.append(types.Content(role=h_role, parts=[types.Part.from_text(text=h_txt)]))
-                user_parts = [types.Part.from_text(text=f"{ctx_note}\n{clean_u}".strip())]
+                extra_post_tool_rule = ""
+                if pre_executed_summary:
+                    user_prompt_txt = (
+                        f"{ctx_note}\nUser asked: {clean_u}\n"
+                        f"[ALREADY EXECUTED ON SCREEN:\n{pre_executed_summary}]\n"
+                        "Do NOT call those tools again. Explain cleanly in 2-4 spoken sentences what is now open/executed and its result."
+                    ).strip()
+                    extra_post_tool_rule = "Tools already executed above — reply concisely in natural spoken English without calling any UI/compiler tools again."
+                else:
+                    user_prompt_txt = f"{ctx_note}\n{clean_u}".strip()
+                user_parts = [types.Part.from_text(text=user_prompt_txt)]
                 hist_contents.append(types.Content(role="user", parts=user_parts))
 
                 reply_text = await _run_rest_tool_loop(
                     hist_contents,
                     ("gemini-3.1-flash-lite", "gemini-3-flash-preview"),
+                    extra_instruction=extra_post_tool_rule,
                 )
 
                 if not reply_text:
@@ -1259,13 +1358,22 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 )
                                 candidate_txt = (getattr(resp, "text", None) or "").strip()
                                 if candidate_txt:
+                                    promote_gemini_key(api_key)
                                     reply_text = candidate_txt
                                     break
                             except Exception as audio_err:
                                 err_l = repr(audio_err).lower()
                                 live_logger.debug(f"[Fallback Audio {model_name}] skipped: {audio_err}")
+                                if any(tok in err_l for tok in ("api key not valid", "401", "403", "permission")):
+                                    mark_gemini_key_rate_limited(api_key, 3600.0)
+                                    hit_quota = True
+                                    break
                                 if any(tok in err_l for tok in ("429", "resource_exhausted", "quota")):
                                     mark_gemini_key_rate_limited(api_key, 600.0)
+                                    hit_quota = True
+                                    break
+                                if isinstance(audio_err, asyncio.TimeoutError) or "timeout" in err_l:
+                                    mark_gemini_key_rate_limited(api_key, 90.0)
                                     hit_quota = True
                                     break
                         if reply_text:
@@ -1374,6 +1482,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                         try:
                             cm = client.aio.live.connect(model=model_name, config=config)
                             new_sess = await asyncio.wait_for(cm.__aenter__(), timeout=2.6)
+                            promote_gemini_key(api_key)
                             session_cm = cm
                             session = new_sess
                             connected_model = model_name
@@ -1394,9 +1503,12 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                                 mark_gemini_key_rate_limited(api_key, 600.0)
                                 key_exhausted_or_timed_out = True
                                 break
-                            if "timeout" in err_l:
+                            if isinstance(conn_err, asyncio.TimeoutError) or "timeout" in err_l:
+                                mark_gemini_key_rate_limited(api_key, 90.0)
                                 key_exhausted_or_timed_out = True
-                            if "api key not valid" in err_l:
+                                break
+                            if any(tok in err_l for tok in ("api key not valid", "401", "403", "permission")):
+                                mark_gemini_key_rate_limited(api_key, 3600.0)
                                 break
                             continue
                     if key_exhausted_or_timed_out:
@@ -1489,10 +1601,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                             await _deliver_fallback_turn(user_visible_text, client_turn_id=req_client_turn_id)
                             return
 
-                        # Stage B: 4.0s total completion/audio guard (rescues half-stalled Live turns that emitted text without turn_complete/audio)
+                        # Stage B: 4.0s total completion/audio guard (defers while tool calls execute, then rescues half-stalled Live turns)
                         try:
                             await asyncio.sleep(1.8)
                         except asyncio.CancelledError:
+                            return
+                        wait_tool_slices = 0
+                        while in_flight_tool_calls > 0 and wait_tool_slices < 25:
+                            try:
+                                await asyncio.sleep(0.4)
+                            except asyncio.CancelledError:
+                                return
+                            wait_tool_slices += 1
+                        if in_flight_tool_calls > 0:
                             return
                         if (
                             websocket.client_state == WebSocketState.DISCONNECTED
@@ -2189,29 +2310,74 @@ async def das_multimodal_live_ws(websocket: WebSocket):
 
                         # Handle Function Calling inside active session.receive() stream
                         if response.tool_call:
+                            nonlocal post_tool_watchdog_task, in_flight_tool_calls
                             pending_user_text = None
                             _mark_dispatch_responded()
+                            tool_dispatch_seq = turn_dispatch_seq
+                            tool_turn_before = turn_id
+                            tool_client_id = active_client_turn_id
+                            tool_user_query = last_live_user_text or ""
                             function_responses = []
-                            for fc in response.tool_call.function_calls:
-                                exec_res = await _execute_single_tool_call(
-                                    fc.name,
-                                    dict(fc.args or {}),
-                                    str(fc.id or f"tc_{turn_id}_{int(time.monotonic() * 1000)}"),
-                                    active_sess=active_sess,
-                                )
-                                function_responses.append(
-                                    types.FunctionResponse(
-                                        name=fc.name,
-                                        id=fc.id,
-                                        response=exec_res if isinstance(exec_res, dict) else {"result": str(exec_res)},
+                            executed_summary = []
+                            in_flight_tool_calls += 1
+                            try:
+                                for fc in response.tool_call.function_calls:
+                                    exec_res = await _execute_single_tool_call(
+                                        fc.name,
+                                        dict(fc.args or {}),
+                                        str(fc.id or f"tc_{turn_id}_{int(time.monotonic() * 1000)}"),
+                                        active_sess=active_sess,
                                     )
-                                )
+                                    res_dict = exec_res if isinstance(exec_res, dict) else {"result": str(exec_res)}
+                                    executed_summary.append(f"{fc.name}: {json.dumps(res_dict, default=str)[:500]}")
+                                    function_responses.append(
+                                        types.FunctionResponse(
+                                            name=fc.name,
+                                            id=fc.id,
+                                            response=res_dict,
+                                        )
+                                    )
+                            finally:
+                                in_flight_tool_calls = max(0, in_flight_tool_calls - 1)
 
                             if function_responses:
                                 async with send_lock:
                                     await active_sess.send_tool_response(
                                         function_responses=function_responses
                                     )
+                                if post_tool_watchdog_task and not post_tool_watchdog_task.done():
+                                    post_tool_watchdog_task.cancel()
+                                summary_text = "\n".join(executed_summary)
+
+                                async def _post_tool_watchdog():
+                                    try:
+                                        await asyncio.sleep(3.2)
+                                    except asyncio.CancelledError:
+                                        return
+                                    if (
+                                        websocket.client_state == WebSocketState.DISCONNECTED
+                                        or turn_id > tool_turn_before
+                                        or gemini_turn_active
+                                        or tool_dispatch_seq in completed_dispatch_seqs
+                                        or (tool_client_id > 0 and active_client_turn_id > tool_client_id)
+                                    ):
+                                        return
+                                    completed_dispatch_seqs.add(tool_dispatch_seq)
+                                    live_logger.warning(
+                                        f"[DAS Live Proxy] Post-tool silent 3.2s (seq={tool_dispatch_seq}); delivering spoken summary via REST + Puck."
+                                    )
+                                    await close_live_session(active_sess)
+                                    rescue_query = tool_user_query or "Explain clearly what just opened or executed on screen."
+                                    await _deliver_fallback_turn(
+                                        rescue_query,
+                                        client_turn_id=tool_client_id,
+                                        pre_executed_summary=summary_text,
+                                    )
+
+                                pt_task = asyncio.create_task(_post_tool_watchdog())
+                                post_tool_watchdog_task = pt_task
+                                fallback_tasks.add(pt_task)
+                                pt_task.add_done_callback(fallback_tasks.discard)
 
                     if not yielded_any and is_gemini_ws_closed(active_sess):
                         break
@@ -2243,15 +2409,24 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 while websocket.client_state != WebSocketState.DISCONNECTED:
                     await asyncio.sleep(10.0)
                     if session is not None and not is_turn_busy() and not audio_turn_open:
-                        idle_limit = 65.0
+                        idle_limit = 180.0
                         if time.monotonic() - last_activity_mono >= idle_limit:
                             live_logger.info("[DAS Live Proxy] Releasing idle upstream Gemini Live slot (browser stays ONLINE).")
                             await close_live_session(session)
             except asyncio.CancelledError:
                 pass
 
+        async def _proactive_prewarm():
+            if time.monotonic() < live_quota_cooldown_until or _PREWARM_SEM.locked():
+                return
+            async with _PREWARM_SEM:
+                await ensure_live_session()
+
         b_task = asyncio.create_task(receive_from_browser())
         reaper_task = asyncio.create_task(idle_reaper_loop())
+        prewarm_task = asyncio.create_task(_proactive_prewarm())
+        fallback_tasks.add(prewarm_task)
+        prewarm_task.add_done_callback(fallback_tasks.discard)
         try:
             await b_task
         finally:
