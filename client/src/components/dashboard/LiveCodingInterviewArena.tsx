@@ -739,7 +739,7 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
   };
 
   return (
-    <div className="pf-titanium-card space-y-8 rounded-2xl p-8 sm:p-10">
+    <div className="pf-titanium-card space-y-8 rounded-2xl p-8 pb-24 sm:p-10 sm:pb-28">
       {/* Arena Header */}
       <div className="flex flex-col justify-between gap-5 border-b border-white/[0.08] pb-6 lg:flex-row lg:items-center">
         <div>
