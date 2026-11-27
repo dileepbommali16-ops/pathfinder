@@ -456,6 +456,10 @@ describe("Strict Boss Identity, Honorifics & Builder Knowledge", () => {
     expect(radarBenchSrc).toContain("Illustrative reference ranges, not dataset values");
     expect(radarBenchSrc).toContain("Match Score Estimate");
     expect(complianceSrc).toContain("88% cross-validation accuracy on the synthetic dataset");
+    const myProgressSrc = fs.readFileSync(path.join(srcRoot, "components/dashboard/MyProgressJourney.tsx"), "utf-8");
+    expect(myProgressSrc).toContain("Computed from your activity in this browser. Demo profile values are labelled as sample.");
+    expect(myProgressSrc).not.toContain("real ML scores");
+    expect(myProgressSrc).not.toContain("Nothing is pre-filled");
     const faceEffectsSrc = fs.readFileSync(path.join(srcRoot, "agent/FaceEffects.tsx"), "utf-8");
     const avatarSrc = fs.readFileSync(path.join(srcRoot, "agent/Avatar3D.tsx"), "utf-8");
     const indexCssSrc = fs.readFileSync(path.join(srcRoot, "index.css"), "utf-8");

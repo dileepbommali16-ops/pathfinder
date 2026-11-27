@@ -70,10 +70,10 @@ const SLIDE_PREVIEWS: Record<
   },
   progress: {
     eyebrow: "Slide 06 · My Progress Journey",
-    metric: "Real Trend",
-    metricLabel: "Only results you actually earned",
+    metric: "Activity Trend",
+    metricLabel: "Computed from your activity in this browser",
     points: [
-      "Readiness trend line from real Random Forest re-scores",
+      "Readiness trend line from Random Forest re-scores in this session",
       "Best ATS scan, Coding Arena average & interview scorecards in one view",
       "Next-best-step guidance that links straight to the right slide",
     ],

@@ -182,7 +182,7 @@ export const WORKSPACE_SLIDES: WorkspaceSlideItem[] = [
     id: "progress",
     index: "06",
     label: "My Progress",
-    subtitle: "Real ML score trend, ATS scans, arena verdicts & interview scorecards",
+    subtitle: "ML score trend, ATS scans, arena verdicts & interview scorecards",
   },
   {
     id: "profile",

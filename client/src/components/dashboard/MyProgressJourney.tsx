@@ -246,7 +246,7 @@ export const MyProgressJourney: React.FC<MyProgressJourneyProps> = ({
       <section id="progress-summary" data-das-id="progress-summary" className="space-y-6">
         <SectionHeader
           title="My Progress Journey"
-          description="Every number here comes from something you actually did in Pathfinder — real ML scores, ATS scans, Coding Arena verdicts and interview scorecards. Nothing is pre-filled."
+          description="Computed from your activity in this browser. Demo profile values are labelled as sample."
           badge="1 of 3 · Progress"
           accent="cyan"
           helperLabel="Saved privately in this browser"
@@ -368,11 +368,11 @@ export const MyProgressJourney: React.FC<MyProgressJourneyProps> = ({
               <div className="mt-6 flex h-[260px] flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.1] px-6 text-center">
                 <p className="text-sm text-[#D4D4D8]">
                   {chartData.length === 1
-                    ? `First real score recorded: ${chartData[0].score.toFixed(1)}%`
-                    : "No real ML scores recorded yet"}
+                    ? `First ML score recorded: ${chartData[0].score.toFixed(1)}%`
+                    : "No ML scores recorded yet"}
                 </p>
                 <p className="mt-2 max-w-sm text-xs leading-[1.6] text-[#8A8A92]">
-                  Your trend line appears after your second real prediction — update your skills,
+                  Your trend line appears after your second prediction — update your skills,
                   projects or ATS scan in the other slides and the model will re-score you.
                 </p>
               </div>
