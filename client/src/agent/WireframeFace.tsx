@@ -72,7 +72,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
   const localSyllableAvg = useRef<number>(0);
   const baseLowRatio = useRef<number>(0.48);
   const baseMidRatio = useRef<number>(0.34);
-  const nextBlink = useRef<number>(0.6);
+  const nextBlink = useRef<number>(0.5);
   const isBlinking = useRef<boolean>(false);
   const blinkProg = useRef<number>(0);
   const pendingDoubleBlink = useRef<boolean>(false);
@@ -159,6 +159,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
                 mesh.geometry.setAttribute("aLowerTooth", new THREE.BufferAttribute(lowerFlags, 1));
               }
               mesh.material = materials.teethMat;
+              mesh.visible = false;
             } else {
               if (posAttr) {
                 const uvAttr = mesh.geometry?.attributes?.uv;
@@ -301,14 +302,14 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
 
     let blinkVal = 0;
     if (isBlinking.current) {
-      blinkProg.current += delta * 3.85;
+      blinkProg.current += delta * 3.1;
       const p = Math.min(1, blinkProg.current);
       if (p < 0.28) {
         blinkVal = Math.sin((p / 0.28) * (Math.PI * 0.5));
-      } else if (p < 0.46) {
+      } else if (p < 0.54) {
         blinkVal = 1.0;
       } else {
-        blinkVal = 0.5 * (1 + Math.cos(((p - 0.46) / 0.54) * Math.PI));
+        blinkVal = 0.5 * (1 + Math.cos(((p - 0.54) / 0.46) * Math.PI));
       }
       if (blinkProg.current >= 1) {
         isBlinking.current = false;
@@ -317,7 +318,7 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
           pendingDoubleBlink.current = false;
           nextBlink.current = 0.14;
         } else {
-          nextBlink.current = 2.1 + Math.random() * 2.1;
+          nextBlink.current = 1.8 + Math.random() * 1.9;
         }
       }
     }
@@ -500,12 +501,13 @@ export const WireframeFace: React.FC<WireframeFaceProps> = React.memo((props: Wi
       setMorph("eyeLookDown_R", Math.max(0, -lookY), 10);
 
       // Bilateral blinks closing upper & lower eyelids cleanly over molten crimson eyes
-      setMorph("eyeBlink_L", blinkVal, 145);
-      setMorph("eyeBlink_R", blinkVal, 145);
-      setMorph("eyeSquint_L", blinkVal * 0.38, 100);
-      setMorph("eyeSquint_R", blinkVal * 0.38, 100);
-      setMorph("browDown_L", blinkVal * 0.14, 90);
-      setMorph("browDown_R", blinkVal * 0.14, 90);
+      const fullBlink = Math.min(1.15, blinkVal * 1.15);
+      setMorph("eyeBlink_L", fullBlink, 160);
+      setMorph("eyeBlink_R", fullBlink, 160);
+      setMorph("eyeSquint_L", blinkVal * 0.45, 110);
+      setMorph("eyeSquint_R", blinkVal * 0.45, 110);
+      setMorph("browDown_L", blinkVal * 0.16, 95);
+      setMorph("browDown_R", blinkVal * 0.16, 95);
       const blinkLIdx = dict["eyeBlink_L"];
       if (blinkLIdx !== undefined) {
         sharedUniforms.current.uBlink.value = Math.max(blinkVal, inf[blinkLIdx]);

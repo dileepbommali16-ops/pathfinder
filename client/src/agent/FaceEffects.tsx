@@ -196,7 +196,7 @@ export function createMoltenRedEyeMaterial(sharedUniforms: HologramUniforms): TH
         eyeCol = mix(eyeCol, crimsonLava, clamp(outerIris * (0.45 + 0.55 * vein), 0.0, 1.0));
         eyeCol = mix(eyeCol, hotCrimson, irisCore * 0.72);
         eyeCol *= (1.08 + irisCore * 0.35);
-        eyeCol *= (1.0 - smoothstep(0.10, 0.56, uBlink));
+        eyeCol *= (1.0 - smoothstep(0.06, 0.38, uBlink));
 
         outgoingLight = eyeCol;
         diffuseColor.a = 1.0;
