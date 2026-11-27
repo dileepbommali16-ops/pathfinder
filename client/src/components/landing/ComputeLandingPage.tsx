@@ -21,9 +21,9 @@ const SLIDE_PREVIEWS: Record<
   overview: {
     eyebrow: "Slide 01 · Predictive Engine",
     metric: "120 Trees",
-    metricLabel: "Random Forest estimators · 5 readiness axes",
+    metricLabel: "Hybrid score · Random Forest + evidence rubric",
     points: [
-      "Calibrated probability benchmark against a 972-record synthetic placement dataset, generated to demonstrate the pipeline",
+      "Hybrid score: Random Forest (88% cross-validation accuracy on a 972-record synthetic placement dataset, generated to demonstrate the pipeline) blended with an evidence rubric (projects, skills, GitHub, LeetCode, certifications, ATS)",
       "5-axis competency telemetry across academics, DSA, projects & STAR",
       "Reference cutoff benchmarks across Google, Razorpay, Amazon & TCS Digital",
     ],
@@ -73,7 +73,7 @@ const SLIDE_PREVIEWS: Record<
     metric: "Activity Trend",
     metricLabel: "Computed from your activity in this browser",
     points: [
-      "Readiness trend line from Random Forest re-scores in this session",
+      "Readiness trend line from hybrid Random Forest + evidence rubric re-scores in this session",
       "Best ATS scan, Coding Arena average & interview scorecards in one view",
       "Next-best-step guidance that links straight to the right slide",
     ],
@@ -324,11 +324,12 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                     <span>120 ESTIMATORS</span>
                   </div>
                   <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-[#FAFAFA] sm:text-2xl">
-                    Random Forest prediction on synthetic placement data
+                    Hybrid score: Random Forest + evidence rubric
                   </h3>
                   <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-[#A1A1AA]">
-                    Evaluates CGPA multipliers, branch history, standing backlogs, internships, and
-                    DSA readiness across 972 synthetic records and 5 competency axes.
+                    Blends Random Forest (88% cross-validation accuracy on a 972-record synthetic
+                    placement dataset, generated to demonstrate the pipeline) with an evidence rubric
+                    (projects, skills, GitHub, LeetCode, certifications, ATS).
                   </p>
                 </div>
 
@@ -337,7 +338,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   <div className="flex items-baseline justify-between gap-4 border-b border-white/[0.06] pb-4">
                     <div>
                       <span className="font-mono text-[10px] uppercase tracking-wider text-[#8A8A92]">
-                        Model Preview · Random Forest
+                        Model Preview · Hybrid Score (RF + Rubric)
                       </span>
                       <div className="mt-1 font-mono text-3xl font-semibold text-[#FAFAFA] tabular-nums">
                         84.5%
@@ -634,7 +635,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             <span className="font-medium text-[#FAFAFA]">Pathfinder 2.0</span>
           </div>
           <p className="text-center font-mono text-[11px] text-[#8A8A92] sm:text-right">
-            Random Forest ML · 972-Record Synthetic Dataset · Live 3D Voice Coach
+            Hybrid Score (Random Forest + Evidence Rubric) · 972-Record Synthetic Dataset · Live 3D Voice Coach
           </p>
         </div>
       </footer>

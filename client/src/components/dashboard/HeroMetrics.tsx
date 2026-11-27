@@ -62,7 +62,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             </span>
             <span className="inline-flex items-center gap-2 rounded-md border border-white/[0.08] bg-[#0D0D11] px-3 py-1 font-mono text-[11px] text-[#A1A1AA] tabular-nums">
               <span className="h-1.5 w-1.5 rounded-full bg-[#FAFAFA]" />
-              <span>Random Forest · 972-record synthetic dataset</span>
+              <span>Hybrid Score · Random Forest + Evidence Rubric</span>
             </span>
           </div>
 
@@ -77,8 +77,10 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
             className="max-w-[58ch] text-sm leading-[1.7] text-[#A1A1AA] sm:text-base"
             style={{ textWrap: "pretty" }}
           >
-            Your workspace pairs a 972-record synthetic placement dataset, generated to demonstrate
-            the pipeline, with Random Forest offer modeling and live 3D voice coaching from DAS.
+            Your workspace computes a hybrid score: Random Forest (88% cross-validation accuracy on
+            a 972-record synthetic placement dataset, generated to demonstrate the pipeline) blended
+            with an evidence rubric (projects, skills, GitHub, LeetCode, certifications, ATS) and
+            live 3D voice coaching from DAS.
           </p>
 
           <div className="flex flex-wrap items-center gap-3.5 pt-2">
@@ -158,7 +160,7 @@ export const HeroMetrics: React.FC<HeroMetricsProps> = ({
               )
             ) : isWaitingForModel ? (
               <div className="mt-6 flex h-11 w-full items-center justify-center rounded-xl border border-white/[0.08] bg-[#121216] px-4 font-mono text-xs text-[#A1A1AA]">
-                Waiting for real Random Forest score...
+                Waiting for live hybrid score...
               </div>
             ) : (
               <button

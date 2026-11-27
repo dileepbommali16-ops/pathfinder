@@ -19,7 +19,7 @@ const STUDIO_HIGHLIGHTS = [
   {
     index: "01",
     title: "972-Record Synthetic Placement Dataset",
-    detail: "Random Forest probability model calibrated on a 972-record synthetic placement dataset, generated to demonstrate the pipeline.",
+    detail: "Hybrid score: Random Forest (88% cross-validation accuracy on a 972-record synthetic placement dataset, generated to demonstrate the pipeline) blended with an evidence rubric (projects, skills, GitHub, LeetCode, certifications, ATS).",
   },
   {
     index: "02",
