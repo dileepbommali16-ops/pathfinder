@@ -1233,6 +1233,13 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 output_tx_in_turn = False
                 last_activity_mono = time.monotonic()
 
+                tts_res = await synthesize_puck_pcm(reply_text)
+                if (
+                    websocket.client_state == WebSocketState.DISCONNECTED
+                    or (client_turn_id > 0 and active_client_turn_id > client_turn_id)
+                ):
+                    return
+
                 tx_pkt = {
                     "type": "transcript",
                     "text": reply_text,
@@ -1242,13 +1249,7 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                     tx_pkt["client_turn_id"] = client_turn_id
                 await websocket.send_json(tx_pkt)
 
-                tts_res = await synthesize_puck_pcm(reply_text)
-                if (
-                    tts_res
-                    and tts_res.get("pcm_base64")
-                    and websocket.client_state != WebSocketState.DISCONNECTED
-                    and not (client_turn_id > 0 and active_client_turn_id > client_turn_id)
-                ):
+                if tts_res and tts_res.get("pcm_base64"):
                     await _send_chunked_pcm_b64(
                         websocket,
                         tts_res["pcm_base64"],
@@ -1387,18 +1388,19 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 output_tx_in_turn = False
                 last_activity_mono = time.monotonic()
 
+                tts_res = await synthesize_puck_pcm(reply_text)
+                if (
+                    websocket.client_state == WebSocketState.DISCONNECTED
+                    or (req_voice_seq > 0 and voice_turn_seq > req_voice_seq)
+                ):
+                    return
+
                 await websocket.send_json({
                     "type": "transcript",
                     "text": reply_text,
                     "turn_id": this_turn,
                 })
-                tts_res = await synthesize_puck_pcm(reply_text)
-                if (
-                    tts_res
-                    and tts_res.get("pcm_base64")
-                    and websocket.client_state != WebSocketState.DISCONNECTED
-                    and not (req_voice_seq > 0 and voice_turn_seq > req_voice_seq)
-                ):
+                if tts_res and tts_res.get("pcm_base64"):
                     await _send_chunked_pcm_b64(
                         websocket,
                         tts_res["pcm_base64"],
@@ -1665,15 +1667,6 @@ async def das_multimodal_live_ws(websocket: WebSocket):
             this_turn = turn_id
             completed_turn_id = this_turn
 
-            tx_pkt = {
-                "type": "transcript",
-                "text": reply_text,
-                "turn_id": this_turn,
-            }
-            if req_client_turn_id > 0:
-                tx_pkt["client_turn_id"] = req_client_turn_id
-            await websocket.send_json(tx_pkt)
-
             # Warm upstream Live session in background so subsequent turns respond in ~500ms
             if session is None or is_gemini_ws_closed(session):
                 t_w = asyncio.create_task(ensure_live_session())
@@ -1691,6 +1684,15 @@ async def das_multimodal_live_ws(websocket: WebSocket):
                 req_client_turn_id > 0 and active_client_turn_id > req_client_turn_id
             ) or websocket.client_state == WebSocketState.DISCONNECTED:
                 return
+
+            tx_pkt = {
+                "type": "transcript",
+                "text": reply_text,
+                "turn_id": this_turn,
+            }
+            if req_client_turn_id > 0:
+                tx_pkt["client_turn_id"] = req_client_turn_id
+            await websocket.send_json(tx_pkt)
 
             if tts_res and tts_res.get("pcm_base64"):
                 await _send_chunked_pcm_b64(

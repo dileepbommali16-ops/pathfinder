@@ -554,6 +554,34 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       { role: "user" as const, content: queryText },
     ].slice(-12);
 
+    const deliverSyncedReply = (replyText: string, shouldContinueFn: () => boolean) => {
+      let textRevealed = false;
+      const revealTextOnce = () => {
+        if (textRevealed || !shouldContinueFn()) return;
+        textRevealed = true;
+        setTranscript(replyText);
+      };
+      chatHistoryRef.current = [
+        ...chatHistoryRef.current,
+        { role: "assistant" as const, content: replyText },
+      ].slice(-12);
+      restTtsAbortRef.current?.abort();
+      const ttsAc = new AbortController();
+      restTtsAbortRef.current = ttsAc;
+      void audioEngine
+        .speakTextPuckOrLocal(replyText, API_BASE, {
+          signal: ttsAc.signal,
+          shouldContinue: shouldContinueFn,
+          onPlaybackStart: revealTextOnce,
+        })
+        .then((played) => {
+          if (!played) revealTextOnce();
+        })
+        .catch(() => {
+          revealTextOnce();
+        });
+    };
+
     // Capture and permanently remember Guest visitor's name on first mention so DAS never asks twice
     if (getHonorificKey() === "guest") {
       const awaitingName = /know your name|what(?:'s| is) your name|tell me your name/i.test(
@@ -568,17 +596,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           if (mode === "chat" && isPureGuestNameIntroduction(queryText, savedName)) {
             cleanup();
             const welcomeNameReply = `Nice to meet you, ${savedName}! I've saved your name, so I won't ask again. How can I help you explore Pathfinder today?`;
-            chatHistoryRef.current = [
-              ...chatHistoryRef.current,
-              { role: "assistant" as const, content: welcomeNameReply },
-            ].slice(-12);
-            setTranscript(welcomeNameReply);
-            const ttsAc = new AbortController();
-            restTtsAbortRef.current = ttsAc;
-            void audioEngine.speakTextPuckOrLocal(welcomeNameReply, API_BASE, {
-              signal: ttsAc.signal,
-              shouldContinue: () => askCoachNonceRef.current === nonce,
-            });
+            deliverSyncedReply(welcomeNameReply, () => askCoachNonceRef.current === nonce);
             return;
           }
         }
@@ -593,17 +611,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       if (audioEngine.hasCachedPuckTts(exactHi)) {
         cleanup();
         dasSocket.warmup();
-        chatHistoryRef.current = [
-          ...chatHistoryRef.current,
-          { role: "assistant" as const, content: exactHi },
-        ].slice(-12);
-        setTranscript(exactHi);
-        const ttsAc = new AbortController();
-        restTtsAbortRef.current = ttsAc;
-        void audioEngine.speakTextPuckOrLocal(exactHi, API_BASE, {
-          signal: ttsAc.signal,
-          shouldContinue: () => askCoachNonceRef.current === nonce,
-        });
+        deliverSyncedReply(exactHi, () => askCoachNonceRef.current === nonce);
         return;
       }
       if (dasSocket.isSocketConnected) {
@@ -619,32 +627,12 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             return;
           }
           cleanup();
-          chatHistoryRef.current = [
-            ...chatHistoryRef.current,
-            { role: "assistant" as const, content: exactHi },
-          ].slice(-12);
-          setTranscript(exactHi);
-          const ttsAc = new AbortController();
-          restTtsAbortRef.current = ttsAc;
-          void audioEngine.speakTextPuckOrLocal(exactHi, API_BASE, {
-            signal: ttsAc.signal,
-            shouldContinue: () => askCoachNonceRef.current === nonce,
-          });
+          deliverSyncedReply(exactHi, () => askCoachNonceRef.current === nonce);
         }, 1100);
         return;
       }
       cleanup();
-      chatHistoryRef.current = [
-        ...chatHistoryRef.current,
-        { role: "assistant" as const, content: exactHi },
-      ].slice(-12);
-      setTranscript(exactHi);
-      const ttsAc = new AbortController();
-      restTtsAbortRef.current = ttsAc;
-      void audioEngine.speakTextPuckOrLocal(exactHi, API_BASE, {
-        signal: ttsAc.signal,
-        shouldContinue: () => askCoachNonceRef.current === nonce,
-      });
+      deliverSyncedReply(exactHi, () => askCoachNonceRef.current === nonce);
       return;
     }
 
@@ -657,19 +645,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         cleanReply
       ) {
         cleanup();
-        chatHistoryRef.current = [
-          ...chatHistoryRef.current,
-          { role: "assistant" as const, content: cleanReply },
-        ].slice(-12);
-        setTranscript(cleanReply);
-        restTtsAbortRef.current?.abort();
-        const ttsAc = new AbortController();
-        restTtsAbortRef.current = ttsAc;
-        void audioEngine.speakTextPuckOrLocal(cleanReply, API_BASE, {
-          signal: ttsAc.signal,
-          shouldContinue: () =>
-            askCoachNonceRef.current === nonce && !settled,
-        });
+        deliverSyncedReply(cleanReply, () => askCoachNonceRef.current === nonce);
       }
     };
 
@@ -692,7 +668,7 @@ export const AgentLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       dasSocket.sendTextCommand(queryText);
     }
-    const fallbackDelayMs = wasSocketReady ? 4500 : 750;
+    const fallbackDelayMs = wasSocketReady ? 2200 : 400;
     timerId = window.setTimeout(() => {
       if (
         settled ||

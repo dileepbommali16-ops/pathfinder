@@ -1351,7 +1351,7 @@ class AudioEngine {
   public async speakTextPuckOrLocal(
     rawText: string,
     apiBase?: string,
-    options?: { signal?: AbortSignal; shouldContinue?: () => boolean }
+    options?: { signal?: AbortSignal; shouldContinue?: () => boolean; onPlaybackStart?: () => void }
   ): Promise<boolean> {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
@@ -1408,7 +1408,8 @@ class AudioEngine {
         cachedAudio.pcm_base64,
         cachedAudio.sample_rate,
         undefined,
-        cleaned
+        cleaned,
+        options?.onPlaybackStart
       );
       if (playedCached) return true;
     }
@@ -1474,7 +1475,8 @@ class AudioEngine {
               data.pcm_base64,
               sr,
               undefined,
-              cleaned
+              cleaned,
+              options?.onPlaybackStart
             );
             if (played) return true;
           }
@@ -1496,6 +1498,7 @@ class AudioEngine {
       return false;
     }
     if (typeof window !== "undefined" && (window as any).dasSocket?.speakVerbatim) {
+      options?.onPlaybackStart?.();
       (window as any).dasSocket.speakVerbatim(cleaned);
       return true;
     }
@@ -1521,7 +1524,8 @@ class AudioEngine {
     base64Pcm: string,
     sampleRate = 24000,
     onEnded?: () => void,
-    spokenText?: string
+    spokenText?: string,
+    onPlaybackStart?: () => void
   ): Promise<boolean> {
     const float32Data = this.decodeBase64Pcm16(base64Pcm);
     if (!float32Data || float32Data.length === 0) return false;
@@ -1587,6 +1591,7 @@ class AudioEngine {
       }
     };
     this.notifySpeakingListeners();
+    onPlaybackStart?.();
     src.start(0);
     return true;
   }
