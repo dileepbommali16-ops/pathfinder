@@ -200,6 +200,6 @@ def calculate_readiness_audit(profile: StudentProfile):
             "Deploy your full-stack project live on Vercel/Render with Docker containerization.",
             "Schedule a behavioral STAR method mock interview with Pathfinder AI Coach."
         ],
-        is_estimated=False,
-        data_source="Random Forest Classifier (88% Accuracy)"
+        is_estimated=pred.is_estimated,
+        data_source=pred.data_source
     )

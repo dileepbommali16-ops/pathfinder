@@ -164,7 +164,7 @@ export const MyProgressJourney: React.FC<MyProgressJourneyProps> = ({
     if (stats.latestPrediction === null) {
       steps.push({
         title: "Get your real ML readiness score",
-        detail: "Add your CGPA, branch and skills so the Random Forest model can score your profile.",
+        detail: "Add your CGPA, branch and skills so the hybrid Random Forest + evidence rubric model can score your profile.",
         tab: "profile",
         cta: "Open Profile & Settings",
       });
@@ -312,7 +312,7 @@ export const MyProgressJourney: React.FC<MyProgressJourneyProps> = ({
       <section id="progress-trend" data-das-id="progress-trend" className="space-y-6">
         <SectionHeader
           title="Readiness Trend"
-          description="How your real Random Forest placement probability has moved each time your profile changed."
+          description="How your hybrid placement probability (Random Forest + evidence rubric) has moved each time your profile changed."
           badge="2 of 3 · Trend"
           accent="amber"
         />

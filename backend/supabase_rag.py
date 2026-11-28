@@ -1,7 +1,7 @@
 """
 Pathfinder 2.0 - Supabase pgvector RAG Engine (28 Flagship Blueprints + 972 Placements)
 - Generates deterministic 384-dimensional normalized semantic embeddings for all
-  28 project blueprints and 972 verified campus placement records.
+  28 project blueprints and 972-record synthetic placement dataset.
 - Syncs/queries Supabase `pathfinder_knowledge_embeddings` via `match_pathfinder_knowledge` RPC.
 - Provides instant (<2ms) in-memory cosine similarity fallback and enforces a strict
   < 2000 token Groq system prompt with ONLY the Top 3 semantic matches injected.

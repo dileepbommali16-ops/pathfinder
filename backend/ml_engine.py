@@ -234,7 +234,7 @@ def _evaluate_senior_hiring_calibration(
     if ats_score is not None and ats_score < 60:
         priorities.append(f"Latest ATS Resume Audit scored {ats_score:.0f}/100 — rewrite weak starter bullets with production metrics before applying.")
     elif ats_score is None:
-        priorities.append("Upload and audit your PDF resume in Tab 5 (ATS Resume Studio) to verify keyword coverage & project rigor.")
+        priorities.append("Upload and audit your PDF resume in Slide 02 (JD & Resume Lab — ATS Resume Studio) to verify keyword coverage & project rigor.")
 
     if not certs_list:
         priorities.append("Add at least 1 recognized cloud/backend certification (e.g., AWS Cloud Practitioner, Azure AZ-900, or NPTEL/Meta Backend).")
@@ -391,7 +391,7 @@ def predict_placement(
         priorities=priorities,
         breakdown=breakdown,
         is_estimated=is_estimated,
-        data_source="Random Forest + Senior Hiring Manager Calibration (972 Records)"
+        data_source="Hybrid Score: Random Forest (88% CV on 972 Synthetic Records) + Evidence Rubric"
         if not is_estimated
-        else "Senior Hiring Manager Calibrated Model (Estimated)",
+        else "Evidence Rubric Calibration (Estimated)",
     )

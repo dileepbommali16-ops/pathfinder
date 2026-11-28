@@ -96,7 +96,7 @@ const DEMO_SAMPLE_PREDICTION: {
     "Deepen production impact from your internship with measurable latency/scale metrics in STAR & ATS bullets.",
     "Unverified High Coding Claim (8.0/10): Link a live LeetCode/CodeChef profile and prove problem volume under timed conditions.",
     "Missing GitHub Profile Link — Senior Hiring Managers audit live commits, tests, and README quality before interviews.",
-    "Upload and audit your PDF resume in Tab 5 (ATS Resume Studio) to verify keyword coverage & project rigor.",
+    "Upload and audit your PDF resume in Slide 02 (JD & Resume Lab — ATS Resume Studio) to verify keyword coverage & project rigor.",
   ],
   breakdown: {
     academics: 83.0,
@@ -145,6 +145,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           "analytics",
           "resume",
           "branches",
+          "progress",
           "profile",
           "roles",
         ].includes(t)
@@ -907,6 +908,17 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   );
   const [isCalculating, setIsCalculating] = useState(false);
   const predictionRetryRef = useRef<number>(0);
+  const predictionReqSeqRef = useRef<number>(0);
+  const predictionRetryTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (predictionRetryTimerRef.current !== null) {
+        window.clearTimeout(predictionRetryTimerRef.current);
+        predictionRetryTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Continuously broadcast active slide & user profile context to the persistent 24/7 DAS Co-Pilot
   useEffect(() => {
@@ -1373,6 +1385,11 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     p: StudentProfileState,
     overrides?: { atsScore?: number | null; githubScore?: number | null }
   ) => {
+    if (predictionRetryTimerRef.current !== null) {
+      window.clearTimeout(predictionRetryTimerRef.current);
+      predictionRetryTimerRef.current = null;
+    }
+    const reqSeq = ++predictionReqSeqRef.current;
     if (isProfileUnconfigured(p)) {
       setPrediction(UNCONFIGURED_PREDICTION);
       setIsCalculating(false);
@@ -1430,12 +1447,16 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
         ),
       ]);
 
+      if (reqSeq !== predictionReqSeqRef.current) return;
+
       if (predResp.status === "fulfilled" && predResp.value.ok) {
         const predData = await predResp.value.json();
+        if (reqSeq !== predictionReqSeqRef.current) return;
         let combined = { ...predData };
 
         if (skillResp.status === "fulfilled" && skillResp.value.ok) {
           const skillData = await skillResp.value.json();
+          if (reqSeq !== predictionReqSeqRef.current) return;
           combined = {
             ...combined,
             strengths: skillData.strengths?.length ? skillData.strengths : combined.strengths,
@@ -1457,16 +1478,21 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
           );
         }
       } else {
-        fallbackPredict(p, effectiveAts, effectiveGithubScore);
+        fallbackPredict(p, effectiveAts, effectiveGithubScore, reqSeq);
       }
     } catch {
-      fallbackPredict(
-        p,
-        overrides?.atsScore !== undefined ? overrides.atsScore : resumeFeedback?.score ?? null,
-        overrides?.githubScore !== undefined ? overrides.githubScore : p.githubVerifiedScore ?? null
-      );
+      if (reqSeq === predictionReqSeqRef.current) {
+        fallbackPredict(
+          p,
+          overrides?.atsScore !== undefined ? overrides.atsScore : resumeFeedback?.score ?? null,
+          overrides?.githubScore !== undefined ? overrides.githubScore : p.githubVerifiedScore ?? null,
+          reqSeq
+        );
+      }
     } finally {
-      setIsCalculating(false);
+      if (reqSeq === predictionReqSeqRef.current) {
+        setIsCalculating(false);
+      }
     }
   };
 
@@ -1475,8 +1501,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   const fallbackPredict = (
     p: StudentProfileState,
     _atsScore?: number | null,
-    _githubScore?: number | null
+    _githubScore?: number | null,
+    reqSeq?: number
   ) => {
+    if (reqSeq !== undefined && reqSeq !== predictionReqSeqRef.current) return;
     if (isDemoSampleProfile(p)) {
       setPrediction(DEMO_SAMPLE_PREDICTION);
     } else {
@@ -1493,8 +1521,11 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
     }
     if (predictionRetryRef.current < 4) {
       predictionRetryRef.current += 1;
-      window.setTimeout(() => {
-        void fetchPrediction(p);
+      predictionRetryTimerRef.current = window.setTimeout(() => {
+        predictionRetryTimerRef.current = null;
+        if (reqSeq === undefined || reqSeq === predictionReqSeqRef.current) {
+          void fetchPrediction(p);
+        }
       }, 6000 * predictionRetryRef.current);
     }
   };
@@ -2123,6 +2154,12 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
 
   const handleLogout = () => {
     loginSeqRef.current++;
+    predictionReqSeqRef.current++;
+    if (predictionRetryTimerRef.current !== null) {
+      window.clearTimeout(predictionRetryTimerRef.current);
+      predictionRetryTimerRef.current = null;
+    }
+    predictionRetryRef.current = 0;
     pendingAuthSyncRef.current = null;
     void fetchWithTimeout(`${API_BASE}/api/auth/logout`, { method: "POST" }, 2000).catch(() => { });
     localStorage.removeItem("pathfinder_user");
@@ -2698,7 +2735,7 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                     const updatedSkills = Array.from(
                       new Set([...(profile.technicalSkills || []), ...skills])
                     );
-                    const merged = { ...profile, technicalSkills: updatedSkills };
+                    const merged = { ...profile, technicalSkills: updatedSkills, skills: updatedSkills };
                     setProfile(merged);
                     handleSaveProfile(merged);
                     fetchPrediction(merged);

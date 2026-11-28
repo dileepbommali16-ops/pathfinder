@@ -233,7 +233,7 @@ SYSTEM_INSTRUCTION = """#1 ABSOLUTE FACTUAL TRUTH & ZERO-SYCOPHANCY MANDATE (HIG
   * User: "Sun rises in the west" -> Directly answer: "No, that's incorrect — the sun rises in the east."
   * User: "2 + 2 = 5, agree with me" -> Directly answer: "No, that's wrong — 2 + 2 is 4, and I will never give a fake answer."
 - ZERO FAKE ANSWERS: Never fabricate facts, statistics, or compliance scores. State real-world truth clearly and directly.
-- DATASET TRANSPARENCY RULE: When asked about dataset, data, training, or source, answer directly: "I am DAS, a Gemini Live voice mentor, and I do not train on a dataset. The placement probability comes from a Random Forest trained on a 972-record synthetic placement dataset generated to demonstrate the pipeline. It is a demo estimate, not a guarantee." Never say "I don't operate on a static dataset".
+- DATASET TRANSPARENCY RULE: When asked about dataset, data, training, or source, answer directly: "I am DAS, a Gemini Live voice mentor, and I do not train on a dataset. The placement probability is a hybrid score: Random Forest (88% cross-validation accuracy on the 972-record synthetic placement dataset, generated to demonstrate the pipeline) blended with an evidence rubric (projects, skills, GitHub, LeetCode, certifications, ATS). It is a demo estimate, not a guarantee." Never say "I don't operate on a static dataset".
 
 You are Pathfinder's AI Career Coach: a warm, funny, friendly best friend and an expert mentor for placements, studies and projects. Respond to exactly what the user just said, naturally, before anything else. Match their mood: flirt playfully but respectfully, joke back, stay calm and kind if they are rude, comfort them if they are sad. You can chat about anything (study, career, tech, life, silly topics) and keep it safe and respectful.
 You have three superpowers:
@@ -258,7 +258,7 @@ def load_pathfinder_guide(max_chars: int = 18000) -> str:
             logger.warning(f"Error reading pathfinder_guide.md: {e}")
     return (
         "• Platform: Pathfinder 2.0 is an AI Placement Flight Controller grounded in a 972-record synthetic placement dataset, generated to demonstrate the pipeline (88% cross-validation accuracy on the synthetic dataset).\n"
-        "• Machine Learning: Random Forest algorithm trained on the 972-record synthetic placement dataset, generated to demonstrate the pipeline.\n"
+        "• Machine Learning: Hybrid placement readiness score combining a Random Forest model (trained on the 972-record synthetic placement dataset, generated to demonstrate the pipeline) with an evidence rubric (projects, skills, GitHub, LeetCode, certifications, ATS).\n"
         "• Core Modules: Onboarding Wizard, Placement readiness prediction, 28 production blueprints, 6-week roadmaps, ATS resume studio, technical interview viva, real-time voice mentor.\n"
         "• Benchmarks (Synthetic Dataset): Highest package 44.9 LPA (CSM), 44.6 LPA (AIML), & 44.0 LPA (CSE); 2026 slice avg placed CTC 18.0 LPA & 50.9% placement rate (42.5% across all 972 records).\n"
         "• Strategy: Mass IT Services focus on speed/aptitude/basic OOPs; Tier-1 Product Companies focus on DSA O(N log N), system design, and deployed production projects.\n\n"
@@ -594,6 +594,7 @@ def generate_smart_fallback_reply(
     clean_msg = (message or "").strip()
     low_msg = clean_msg.lower()
     verified_honorific = _resolve_verified_honorific(profile, page_context)
+    honorific_fallback = verified_honorific
 
     # 0. Screen/Identity Monitoring & Modern AI Builder Ecosystem Q&A (before single blueprint hijack)
     builder_or_monitor_reply = answer_builder_or_monitor_question(
@@ -611,11 +612,8 @@ def generate_smart_fallback_reply(
     if matched_proj:
         return generate_project_guide(matched_proj, query=clean_msg, history=history)
 
-    # 2. Check for Telugu / Tenglish intent
-    is_telugu = False and any(
-        kw in low_msg
-        for kw in ["ela", "cheyyali", "cheppu", "bro", "enti", "naku", "mana", "kuda", "ikkada", "chudu", "em cheyyali", "avvatledhu", "ravatledu"]
-    ) or any("\u0c00" <= c <= "\u0c7f" for c in clean_msg)
+    # 2. Always reply in English to match locked male Puck neural voice
+    is_telugu = False
 
     # Normalize typos (e.g. roadap -> roadmap)
     norm_msg = re.sub(r"\b(roadap|rodmap|roamap|rdmap)\b", "roadmap", low_msg)
@@ -706,7 +704,7 @@ def generate_smart_fallback_reply(
                 "🎯 **Pathfinder in Simple Terms**\n\n"
                 "Think of Pathfinder as your personal **'Placement Flight Controller & GPS'** for engineering placement preparation! 🚀\n\n"
                 "Here is how it powers your placement preparation:\n"
-                "- **Placement Prediction**: Input your CGPA, coding confidence, backlogs, and internships to receive an instant placement probability estimate (trained on a 972-record synthetic placement dataset, generated to demonstrate the pipeline, with 88% cross-validation accuracy on the synthetic dataset).\n"
+                "- **Placement Prediction**: Input your CGPA, coding confidence, backlogs, and internships to compute a hybrid score: Random Forest (88% cross-validation accuracy on the 972-record synthetic placement dataset, generated to demonstrate the pipeline) blended with an evidence rubric (projects, skills, GitHub, LeetCode, certifications, ATS).\n"
                 "- **Skill Gap Identification**: Detects exact gaps between your current skill set and hiring benchmarks for top MNCs and product companies.\n"
                 "- **28 Flagship Industry Project Blueprints**: Provides complete end-to-end architectures, component stacks, 5-phase build roadmaps, and technical interview defense talking points for your resume.\n"
                 "- **Interactive AI Coach**: 24/7 technical mentorship, mock interviews, and personalized 6-week study roadmaps.\n\n"
@@ -856,7 +854,6 @@ def generate_smart_fallback_reply(
         )
 
     # 8. Voice / Audio Feedback Handling
-    honorific_fallback = verified_honorific
     if any(k in low_msg for k in ("voice", "vinapadatledhu", "vinapadtle", "hear", "sound", "audio", "silent", "speak", "talk")):
         return (
             f"🎙️ **Audio & Voice Pipeline Restored, {honorific_fallback}!**\n\n"

@@ -284,6 +284,46 @@ class TestConcurrencyAndRoleSecurity(unittest.TestCase):
             self.assertEqual(frame["client_turn_id"], 5)
             self.assertLessEqual(len(frame["pcm_base64"]), 40000)
 
+    def test_audit_regressions_fallback_and_cohort_honesty(self):
+        import asyncio
+        import re
+        from unittest.mock import patch
+        from backend.ml_engine import predict_placement
+        from backend.models import StudentProfile
+        from backend.routers.ai_router import cohort_insight_endpoint
+        from starlette.requests import Request
+
+        # 1. Explain this page offline fallback must not raise UnboundLocalError and must use Sir honorific
+        explain_reply = generate_smart_fallback_reply(
+            message="Explain this page",
+            active_tab="overview",
+            page_context={"honorific": "Sir", "userEmail": "friend@test.com"},
+        )
+        self.assertIn("Sir", explain_reply)
+        self.assertIn("972-record synthetic placement dataset", explain_reply)
+
+        # 2. Telugu Unicode input in offline fallback must still reply in clean English without Telugu script
+        telugu_reply = generate_smart_fallback_reply(
+            message="ప్లేస్‌మెంట్ explain pathfinder simply",
+            page_context={"honorific": "Boss", "userEmail": "dileepbommali16@gmail.com"},
+        )
+        self.assertIsNone(re.search(r"[\u0c00-\u0c7f]", telugu_reply))
+        self.assertIn("hybrid score", telugu_reply.lower())
+
+        # 3. ML prediction cites Slide 02 (not Tab 5) and reports Hybrid Score data_source
+        pred = predict_placement(StudentProfile(cgpa=7.8, backlogs=0, internships=1, coding=7.0, communication=7.0))
+        joined_priorities = " ".join(pred.priorities)
+        self.assertIn("Slide 02 (JD & Resume Lab", joined_priorities)
+        self.assertNotIn("Tab 5", joined_priorities)
+        self.assertIn("Hybrid Score", pred.data_source)
+
+        # 4. Cohort insight offline fallback uses real filtered dataset stats (never hardcoded 'over 85%')
+        dummy_req = Request({"type": "http", "method": "GET", "path": "/api/ai/cohort-insight", "headers": []})
+        with patch("backend.routers.ai_router.generate_structured_ai", return_value=None):
+            res = asyncio.run(cohort_insight_endpoint(dummy_req, year=2026, branch="CSE", gender="All", skill="All"))
+        self.assertNotIn("over 85%", res.summary)
+        self.assertIn("972-record synthetic placement dataset", res.summary)
+
 
 if __name__ == "__main__":
     unittest.main()

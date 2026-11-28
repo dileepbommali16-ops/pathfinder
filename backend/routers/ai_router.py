@@ -46,6 +46,7 @@ from backend.gemini_engine import (
     generate_strict_json_evaluation,
     generate_smart_fallback_reply
 )
+from backend.data_service import get_cohort_analytics_data
 from backend.pdf_engine import extract_text_from_pdf, extract_resume_text
 from backend.resume_auditor import (
     analyze_resume_deterministically,
@@ -254,14 +255,42 @@ async def cohort_insight_endpoint(
     if result:
         return result
 
+    eff_year = 2026 if year is None else year
+    eff_branch = branch or "All"
+    eff_gender = gender or "All"
+    eff_skill = skill or "All"
+    stats = get_cohort_analytics_data(
+        year=eff_year,
+        branch=eff_branch,
+        gender=eff_gender,
+        skill=eff_skill,
+    )
+    total_rec = int(stats.get("total_records", 0))
+    rate = float(stats.get("placement_rate", 0.0))
+    avg_cgpa = float(stats.get("avg_cgpa", 0.0))
+    max_lpa = float(stats.get("highest_package", 0.0))
+    year_label = "All Years" if eff_year == 0 else str(eff_year)
+
+    if total_rec > 0:
+        summary = (
+            f"Across {total_rec} records ({year_label}, branch={eff_branch}, skill={eff_skill}) "
+            f"in the 972-record synthetic placement dataset, the placement rate is {rate:.1f}% "
+            f"with an average CGPA of {avg_cgpa:.2f} and peak package of {max_lpa:.1f} LPA."
+        )
+    else:
+        summary = (
+            f"No matching records found for {year_label}, branch={eff_branch}, skill={eff_skill} "
+            f"in the 972-record synthetic placement dataset. Widen one or more filters to inspect cohort distributions."
+        )
+
     return CohortInsight(
-        headline=f"Cohort Recruiter Insights for {branch} ({year})",
-        summary=f"In the {year} cohort, candidates demonstrating dual proficiency in robust coding fundamentals and clear communication achieved over 85% placement rates into product-tier roles.",
+        headline=f"Cohort Dataset Summary for {eff_branch} ({year_label})",
+        summary=summary,
         actions=[
-            "Target Tier-1 hiring rounds by securing at least 1 verified internship or production project.",
+            "Target Tier-1 hiring rounds by backing skills with at least 1 deployed production project.",
             "Eliminate active backlogs early to meet strict campus placement eligibility criteria.",
-            "Participate in weekly timed coding contests to build resilience under exam pressure."
-        ]
+            "Participate in weekly timed coding contests to build consistency under interview conditions.",
+        ],
     )
 
 

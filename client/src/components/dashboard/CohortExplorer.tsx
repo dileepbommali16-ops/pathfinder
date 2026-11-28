@@ -330,21 +330,21 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
           <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#8A8A92]">Placement Rate</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
-              {analytics?.placement_rate ? `${analytics.placement_rate.toFixed(1)}%` : "—"}
+              {analytics?.placement_rate != null ? `${analytics.placement_rate.toFixed(1)}%` : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#8A8A92]">Avg CGPA</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
-              {analytics?.avg_cgpa ? analytics.avg_cgpa.toFixed(2) : "—"}
+              {analytics?.avg_cgpa != null ? analytics.avg_cgpa.toFixed(2) : "—"}
             </p>
           </div>
 
           <div className="pf-subpanel rounded-xl p-5 text-center">
             <span className="font-mono text-[10px] text-[#8A8A92]">Coding Index</span>
             <p className="mt-2 font-mono text-xl font-semibold text-[#FAFAFA] tabular-nums">
-              {analytics?.avg_coding_score ? `${analytics.avg_coding_score.toFixed(1)}/10` : "—"}
+              {analytics?.avg_coding_score != null ? `${analytics.avg_coding_score.toFixed(1)}/10` : "—"}
             </p>
           </div>
 
