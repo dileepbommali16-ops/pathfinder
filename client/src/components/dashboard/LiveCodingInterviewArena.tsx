@@ -663,15 +663,20 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
         return { compileOk: false, outputMatched: false, out: errMsg, isBlankOrStarter: false };
       }
 
-      const enforcePythonTokens = language === "python" && activeChallenge.expectedOutputTokens.length > 0;
-      const outputMatched = enforcePythonTokens
+      const hasExpectedTokens = activeChallenge.expectedOutputTokens.length > 0;
+      const outputMatched = hasExpectedTokens
         ? verifyExpectedOutput(out, activeChallenge.expectedOutputTokens)
-        : Boolean(out && !/no standard output|no output/i.test(out));
+        : false;
 
-      if (outputMatched) {
+      if (hasExpectedTokens && outputMatched) {
         setCompilerOutput(out || "Executed cleanly.");
         setRunStatus("passed");
         setSolvedIds((prev) => (prev.includes(activeChallenge.id) ? prev : [...prev, activeChallenge.id]));
+      } else if (!hasExpectedTokens && out && !/no standard output|no output/i.test(out)) {
+        setCompilerOutput(
+          `${out}\n\n[Executed cleanly — no fixed sample test for this custom round. Click "Submit Code & Viva" for AI grading.]`
+        );
+        setRunStatus("idle");
       } else {
         setCompilerOutput(
           out
@@ -1147,8 +1152,17 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
                     <button
                       type="button"
                       onClick={() => {
-                        setLanguage("python");
-                        setCode(activeChallenge.solutionPython);
+                        const refSolution = activeChallenge.solutionPython;
+                        if (!refSolution || isStarterOrBlank(refSolution, activeChallenge.starterPython)) {
+                          toast.info("No preset reference solution for this custom round — write your own solution.");
+                          return;
+                        }
+                        if (language !== "python") {
+                          setLanguage("python");
+                          setTimeout(() => setCode(refSolution), 0);
+                        } else {
+                          setCode(refSolution);
+                        }
                         setCompilerOutput("");
                         setRunStatus("idle");
                         toast.info("Loaded optimal reference program — click Run Code to test.");
@@ -1173,9 +1187,8 @@ export const LiveCodingInterviewArena: React.FC<LiveCodingInterviewArenaProps> =
             <div
               role="status"
               aria-live="polite"
-              className={`space-y-2 rounded-xl border bg-black/55 p-4.5 ${
-                !isCompiling && runStatus === "error" ? "border-red-500/40" : "border-white/[0.07]"
-              }`}
+              className={`space-y-2 rounded-xl border bg-black/55 p-4.5 ${!isCompiling && runStatus === "error" ? "border-red-500/40" : "border-white/[0.07]"
+                }`}
             >
               <div className="flex items-center justify-between text-[11px]">
                 <span className="font-mono font-medium text-[#FAFAFA]">
