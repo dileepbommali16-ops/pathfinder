@@ -96,7 +96,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
                   }}
                   className="text-left text-[#A1A1AA] transition-colors hover:text-[#FAFAFA]"
                 >
-                  28 system blueprints
+                  What-If & GitHub Proof
                 </button>
               </li>
               <li>
@@ -196,13 +196,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 text-xs text-[#8A8A92] sm:flex-row">
           <p>© {currentYear} Pathfinder 2.0 Career Intelligence. All rights reserved.</p>
           <div className="flex items-center gap-5">
-            <button
-              type="button"
-              onClick={() => openCompliance("privacy")}
-              className="transition-colors hover:text-[#FAFAFA]"
-            >
-              Privacy policy
-            </button>
+
             <button
               type="button"
               onClick={() => openCompliance("terms")}

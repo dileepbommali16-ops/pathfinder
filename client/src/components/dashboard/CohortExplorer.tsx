@@ -220,7 +220,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <button
                   type="button"
                   onClick={onDownloadPDF}
-                  className="pf-btn-primary inline-flex h-10 items-center rounded-xl px-5 text-xs font-medium cursor-pointer"
+                  className="pf-btn-primary inline-flex h-10 items-center rounded-xl px-5 text-xs font-medium whitespace-nowrap shrink-0"
                 >
                   Download PDF
                 </button>

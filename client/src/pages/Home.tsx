@@ -184,6 +184,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
   const { getScreenPayload } = useScreenWatcher(activeTab);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activeTab]);
+
+  useEffect(() => {
     if (initialTab && initialTab !== activeTab) {
       setActiveTab(initialTab);
     }

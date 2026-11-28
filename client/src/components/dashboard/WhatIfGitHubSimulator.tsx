@@ -99,7 +99,7 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
     onAskCoach,
 }) => {
     const initialCgpa = Number(profile?.cgpa ?? 8.1);
-    const initialCoding = Number(profile?.codingScore ?? profile?.coding ?? 7.2);
+    const initialCoding = Number(profile?.codingScore ?? profile?.coding ?? 8.0);
     const initialComm = Number(profile?.communicationScore ?? profile?.communication ?? 7.0);
     const initialInternships = Number(profile?.internships ?? 1);
     const initialProjects = Number(profile?.projectsCount ?? profile?.projects ?? 3);
@@ -269,7 +269,7 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
         e?.preventDefault();
         const cleaned = githubInput.trim();
         if (!cleaned) {
-            setGhError("Enter a GitHub username (e.g. dileepbommali16-ops) or repository URL.");
+            setGhError("Enter a GitHub username (e.g. github.com/username/repo) or repository URL.");
             return;
         }
         setGhLoading(true);

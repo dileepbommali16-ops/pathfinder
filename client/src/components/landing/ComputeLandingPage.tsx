@@ -49,13 +49,13 @@ const SLIDE_PREVIEWS: Record<
     ],
   },
   projects: {
-    eyebrow: "Slide 04 · Engineering Catalog",
-    metric: "28 Stacks",
-    metricLabel: "Software RAG & Embedded blueprints",
+    eyebrow: "Slide 04 · EXPLAINABLE ML & PROOF",
+    metric: "Live ML",
+    metricLabel: "What-If Counterfactuals & GitHub Proof",
     points: [
-      "20 production software & GenAI RAG pipelines plus 8 hardware/IoT systems",
-      "End-to-end architecture diagrams, tech stack rationale & X-Y-Z resume bullets",
-      "Direct 1-click architecture defense walkthrough with DAS AI",
+      "Interactive Random Forest sliders to simulate CGPA, DSA, internships & skill upgrades",
+      "Counterfactual ROI optimizer that ranks the fastest actions to cross the 75% Tier-1 cutoff",
+      "Live GitHub Proof-of-Work audit that cross-checks claimed resume skills against public code",
     ],
   },
   analytics: {
@@ -494,10 +494,13 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
                   </div>
                   <pre className="overflow-x-auto p-5 font-mono text-xs leading-[1.65] text-[#D4D4D8]">
                     {`def first_occurrence(arr, target):
-    lo, hi, ans = 0, len(arr) - 1, -1
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        if arr[mid] == target: ans, hi = mid, mid - 1`}
+  lo, hi, ans = 0, len(arr) - 1, -1
+  while lo <= hi:
+    mid = (lo + hi) // 2
+    if arr[mid] == target: ans, hi = mid, mid - 1
+    elif arr[mid] < target: lo = mid + 1
+    else: hi = mid - 1
+  return ans`}
                   </pre>
                 </div>
               </div>
@@ -619,7 +622,7 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
                 <AnimatedMetric value={28} />
               </div>
-              <p className="mt-2 text-sm text-[#A1A1AA]">Software &amp; hardware blueprints</p>
+              <p className="mt-2 text-sm text-[#A1A1AA]">What-If ML & GitHub Proof Verifier</p>
             </SpotlightSurface>
 
             <SpotlightSurface className="rounded-2xl p-7">
