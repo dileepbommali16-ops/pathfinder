@@ -205,6 +205,16 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
 
         const scenarios: { action: string; detail: string; overrides: Record<string, unknown> }[] = [
             {
+                action: "Verify GitHub Proof (85/100)",
+                detail: "Unlocks Proof-Verified tier",
+                overrides: { github_verified_score: 85 },
+            },
+            {
+                action: "Pass ATS Resume Scan (85%)",
+                detail: "Unlocks Resume Evidence",
+                overrides: { ats_score: 85 },
+            },
+            {
                 action: "+1 Real Internship",
                 detail: `Internships ${internships} → ${Math.min(5, internships + 1)}`,
                 overrides: { internships: Math.min(5, internships + 1) },
@@ -383,10 +393,10 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                 </span>
                                 <span
                                     className={`rounded-md px-2 py-0.5 font-mono text-xs font-semibold ${deltaFromBase > 0
-                                            ? "bg-emerald-500/15 text-emerald-300"
-                                            : deltaFromBase < 0
-                                                ? "bg-rose-500/15 text-rose-300"
-                                                : "bg-white/10 text-[#A1A1AA]"
+                                        ? "bg-emerald-500/15 text-emerald-300"
+                                        : deltaFromBase < 0
+                                            ? "bg-rose-500/15 text-rose-300"
+                                            : "bg-white/10 text-[#A1A1AA]"
                                         }`}
                                 >
                                     {deltaFromBase > 0 ? `+${deltaFromBase.toFixed(1)}%` : `${deltaFromBase.toFixed(1)}%`} vs current
@@ -419,8 +429,8 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                         <div className="relative h-3 w-full overflow-hidden rounded-full bg-white/[0.06]">
                             <div
                                 className={`h-full rounded-full transition-all duration-300 ${liveChance >= 75
-                                        ? "bg-gradient-to-r from-emerald-500 to-cyan-400"
-                                        : "bg-gradient-to-r from-[#5BC0DE] to-indigo-400"
+                                    ? "bg-gradient-to-r from-emerald-500 to-cyan-400"
+                                    : "bg-gradient-to-r from-[#5BC0DE] to-indigo-400"
                                     }`}
                                 style={{ width: `${liveChance}%` }}
                             />
@@ -535,10 +545,10 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                         disabled={alreadyInProfile}
                                         onClick={() => toggleSkill(skill)}
                                         className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${alreadyInProfile
-                                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 opacity-80"
-                                                : active
-                                                    ? "border-[#5BC0DE]/50 bg-[#5BC0DE]/20 text-[#FAFAFA]"
-                                                    : "border-white/10 bg-white/[0.03] text-[#A1A1AA] hover:border-white/25 hover:text-white"
+                                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 opacity-80"
+                                            : active
+                                                ? "border-[#5BC0DE]/50 bg-[#5BC0DE]/20 text-[#FAFAFA]"
+                                                : "border-white/10 bg-white/[0.03] text-[#A1A1AA] hover:border-white/25 hover:text-white"
                                             }`}
                                     >
                                         {alreadyInProfile ? `✓ ${skill}` : active ? `+ ${skill}` : skill}
@@ -569,8 +579,8 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                             <span className="text-[#A1A1AA]">{cf.newChance.toFixed(1)}%</span>
                                             <span
                                                 className={`rounded px-1.5 py-0.5 font-semibold ${cf.delta > 0
-                                                        ? "bg-emerald-500/15 text-emerald-300"
-                                                        : "bg-white/10 text-[#A1A1AA]"
+                                                    ? "bg-emerald-500/15 text-emerald-300"
+                                                    : "bg-white/10 text-[#A1A1AA]"
                                                     }`}
                                             >
                                                 {cf.delta > 0 ? `+${cf.delta.toFixed(1)}%` : `${cf.delta.toFixed(1)}%`}
@@ -652,8 +662,8 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                         <div>
                                             <span
                                                 className={`inline-block rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${ghResult.isVerified
-                                                        ? "bg-emerald-500/15 text-emerald-300"
-                                                        : "bg-amber-500/15 text-amber-300"
+                                                    ? "bg-emerald-500/15 text-emerald-300"
+                                                    : "bg-amber-500/15 text-amber-300"
                                                     }`}
                                             >
                                                 {ghResult.isVerified ? "PROOF VERIFIED" : "PROOF NEEDED"}
@@ -692,8 +702,8 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                         <div
                                             key={sig.label}
                                             className={`rounded-lg border px-3 py-2 font-mono text-[11px] ${sig.ok
-                                                    ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
-                                                    : "border-white/[0.06] bg-white/[0.02] text-[#8A8A92]"
+                                                ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+                                                : "border-white/[0.06] bg-white/[0.02] text-[#8A8A92]"
                                                 }`}
                                         >
                                             {sig.ok ? "✓ " : "○ "}
