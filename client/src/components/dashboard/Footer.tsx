@@ -197,13 +197,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigateTab }) => {
           <p>© {currentYear} Pathfinder 2.0 Career Intelligence. All rights reserved.</p>
           <div className="flex items-center gap-5">
 
-            <button
-              type="button"
-              onClick={() => openCompliance("terms")}
-              className="transition-colors hover:text-[#FAFAFA]"
-            >
-              Terms of service
-            </button>
+
             <button
               type="button"
               onClick={scrollToTop}

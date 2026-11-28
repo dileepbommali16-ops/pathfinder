@@ -618,9 +618,9 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
             </SpotlightSurface>
 
             <SpotlightSurface className="rounded-2xl p-7">
-              <span className="font-mono text-[11px] text-[#8A8A92]">03 · ARCHITECTURES</span>
+              <span className="font-mono text-[11px] text-[#8A8A92]">03 · SIMULATOR</span>
               <div className="mt-3 font-mono text-3xl font-semibold text-[#FAFAFA] sm:text-4xl">
-                <AnimatedMetric value={28} />
+                Live
               </div>
               <p className="mt-2 text-sm text-[#A1A1AA]">What-If ML & GitHub Proof Verifier</p>
             </SpotlightSurface>

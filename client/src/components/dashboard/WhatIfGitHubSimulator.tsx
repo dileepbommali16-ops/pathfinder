@@ -612,7 +612,7 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                             type="text"
                             value={githubInput}
                             onChange={(e) => setGithubInput(e.target.value)}
-                            placeholder="e.g. dileepbommali16-ops or repo URL"
+                            placeholder="e.g. octocat or repo URL"
                             className="w-full rounded-lg border border-white/15 bg-[#09090B] px-3.5 py-2.5 text-xs text-[#FAFAFA] placeholder-[#71717A] focus:border-[#5BC0DE] focus:outline-none"
                         />
                         <button
@@ -794,7 +794,7 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                 Ready to verify live GitHub repositories
                             </p>
                             <p className="mt-1 text-[11px] text-[#71717A]">
-                                Try entering <span className="font-mono text-[#5BC0DE]">dileepbommali16-ops</span> or
+                                Try entering <span className="font-mono text-[#5BC0DE]">octocat</span> or
                                 a full repository URL to test live code authenticity scoring.
                             </p>
                         </div>
