@@ -418,7 +418,7 @@ async def synthesize_puck_pcm(text: str, prefer_unary: bool = False) -> Optional
         _TTS_INFLIGHT[cache_key] = task
 
     try:
-        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=8.5)
+        synthesized = await asyncio.wait_for(asyncio.shield(task), timeout=15.0)
     except asyncio.TimeoutError:
         logger.warning("[Voice TTS] timed out waiting 8.5s for Puck synthesis")
         return None

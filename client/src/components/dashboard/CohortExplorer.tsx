@@ -568,7 +568,7 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.skill_distribution || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#1F1F23" vertical={false} />
-                    <XAxis dataKey="skill" stroke="#8A8A92" fontSize={11} />
+                    <XAxis dataKey="skill" stroke="#8A8A92" fontSize={11} interval={0} angle={-15} textAnchor="end" height={48} />
                     <YAxis stroke="#8A8A92" fontSize={11} domain={[0, 100]} />
                     <Tooltip
                       contentStyle={{
@@ -592,7 +592,10 @@ export const CohortExplorer: React.FC<CohortExplorerProps> = ({
               <div>
                 <h3 className="text-sm font-semibold text-[#FAFAFA]">Filtered Dataset Records</h3>
                 <p className="mt-0.5 text-xs text-[#A1A1AA]">
-                  Showing {records.length} matching records from {filters.branch} (
+                  {records.length >= 200
+                    ? `Showing first ${records.length} records`
+                    : `Showing ${records.length} matching records`}{" "}
+                  from {filters.branch} (
                   {filters.year === 0 ? "All Years" : `Year ${filters.year}`})
                 </p>
               </div>
