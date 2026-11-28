@@ -192,9 +192,9 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                     break
                 if isinstance(exc, asyncio.TimeoutError) or "timeout" in err_l:
                  logger.warning("[Voice TTS Unary %s] timed out after 12s", tts_model)
-                 continue
-             logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
-             continue
+                continue
+                logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
+                continue
 
     if keys and quota_hit_keys >= len(keys):
         _UNARY_TTS_COOLDOWN_UNTIL = time.monotonic() + 1800.0
@@ -336,7 +336,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                     err_s = repr(exc).lower()
                     logger.warning("[Voice TTS Live Puck] %s attempt#%d failed: %r", LIVE_MODEL, attempt_idx + 1, exc)
                     if isinstance(exc, asyncio.TimeoutError) or "timeout" in err_s:
-                        mark_gemini_key_rate_limited(key, 90.0)
+                        
                         if len(keys) == 1:
                             break
                         continue
