@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { WireframeFace } from "./WireframeFace";
+import { SafeWebGLGuard } from "../components/SafeWebGLGuard";
 
 export type AvatarState = "idle" | "listening" | "thinking" | "speaking";
 
@@ -69,31 +70,43 @@ export const Avatar3D: React.FC<Avatar3DProps> = React.memo(({
       className={`fixed inset-0 pointer-events-none z-[1] flex items-center justify-center opacity-100 select-none ${className}`}
       style={style}
     >
-      <Canvas
-        camera={{ position: [0, 0.04, 4.15], fov: 42 }}
-        dpr={isCompactDevice ? [1, 1.25] : [1, 1.5]}
-        gl={{
-          alpha: true,
-          antialias: !isCompactDevice,
-          powerPreference: "default",
-        }}
-        onCreated={({ gl }) => {
-          const dom = gl?.domElement;
-          if (!dom) return;
-          const handleLost = (e: Event) => {
-            e.preventDefault();
-          };
-          dom.addEventListener("webglcontextlost", handleLost, false);
-        }}
-        style={{ width: "100%", height: "100%", pointerEvents: "none" }}
+      <SafeWebGLGuard
+        fallback={
+          <div
+            aria-label="AI Avatar"
+            className="flex h-full w-full items-center justify-center rounded-full border border-[#5BC0DE]/30 bg-gradient-to-br from-[#5BC0DE]/15 to-slate-950"
+          >
+            <span className="h-3 w-3 animate-pulse rounded-full bg-[#5BC0DE]" />
+          </div>
+        }
       >
-        <ambientLight intensity={1.8} />
-        <pointLight position={[4, 4, 5]} intensity={3.2} color="#5BC0DE" />
-        <pointLight position={[-4, -2, 4]} intensity={2.4} color="#5BC0DE" />
-        <React.Suspense fallback={null}>
-          <WireframeFace />
-        </React.Suspense>
-      </Canvas>
+        <Canvas
+          camera={{ position: [0, 0.04, 4.15], fov: 42 }}
+          dpr={isCompactDevice ? [1, 1.25] : [1, 1.5]}
+          gl={{
+            alpha: true,
+            antialias: !isCompactDevice,
+            powerPreference: "default",
+            failIfMajorPerformanceCaveat: false,
+          }}
+          onCreated={({ gl }) => {
+            const dom = gl?.domElement;
+            if (!dom) return;
+            const handleLost = (e: Event) => {
+              e.preventDefault();
+            };
+            dom.addEventListener("webglcontextlost", handleLost, false);
+          }}
+          style={{ width: "100%", height: "100%", pointerEvents: "none" }}
+        >
+          <ambientLight intensity={1.8} />
+          <pointLight position={[4, 4, 5]} intensity={3.2} color="#5BC0DE" />
+          <pointLight position={[-4, -2, 4]} intensity={2.4} color="#5BC0DE" />
+          <React.Suspense fallback={null}>
+            <WireframeFace />
+          </React.Suspense>
+        </Canvas>
+      </SafeWebGLGuard>
     </div>
   );
 });

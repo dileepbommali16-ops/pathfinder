@@ -153,7 +153,7 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                         contents=text,
                         config=cfg,
                     ),
-                    timeout=4.5,
+                    timeout=12.0,
                 )
                 pcm_chunks = bytearray()
                 sample_rate = 24000
@@ -191,9 +191,10 @@ async def _synthesize_puck_via_38_unary_fallback(text: str, keys: list) -> Optio
                     mark_gemini_key_rate_limited(key, 3600.0)
                     break
                 if isinstance(exc, asyncio.TimeoutError) or "timeout" in err_l:
-                    mark_gemini_key_rate_limited(key, 90.0)
-                logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
-                continue
+                 logger.warning("[Voice TTS Unary %s] timed out after 12s", tts_model)
+                 continue
+             logger.warning("[Voice TTS Unary %s] failed: %r", tts_model, exc)
+             continue
 
     if keys and quota_hit_keys >= len(keys):
         _UNARY_TTS_COOLDOWN_UNTIL = time.monotonic() + 1800.0
@@ -312,7 +313,7 @@ async def _synthesize_puck_via_38_live_unlocked(text: str) -> Optional[Dict[str,
                                 ):
                                     break
 
-                    await asyncio.wait_for(_run_live(), timeout=4.2)
+                    await asyncio.wait_for(_run_live(), timeout=12.0)
                     raw_pcm = bytes(pcm_buf)
                     _, peak = _chunk_rms_and_peak_int16(raw_pcm)
                     if len(raw_pcm) >= 4800 and peak >= 200:

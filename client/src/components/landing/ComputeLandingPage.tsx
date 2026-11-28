@@ -267,31 +267,37 @@ export const ComputeLandingPage: React.FC<ComputeLandingPageProps> = ({
               </span>
             </div>
 
-            <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-black">
-              <video
-                src="/demo/pathfinder-launch.mp4"
-                poster="/og-image.png"
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="pointer-events-none aspect-[16/9] w-full object-cover opacity-95 transition-opacity duration-200 group-hover:opacity-100"
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
-              <button
-                id="btn-watch-launch-film"
-                type="button"
+            <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-black">
+              <div
                 onClick={() => setShowDemoModal(true)}
-                aria-label="Open Pathfinder 2.0 55-second product walkthrough with sound"
-                className="absolute inset-0 flex items-end justify-between gap-3 p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FAFAFA] sm:p-6 cursor-pointer"
+                className="relative aspect-video w-full cursor-pointer bg-black"
               >
-                <span className="inline-flex h-10 items-center justify-center rounded-lg border border-white/25 bg-black/85 px-4 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 group-hover:bg-black active:scale-[0.98] sm:text-sm">
+                <video
+                  src="/demo/pathfinder-launch.mp4"
+                  poster="/og-image.png"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 border-t border-white/[0.08] bg-[#0D0D12] px-4 py-3 sm:px-6">
+                <button
+                  id="btn-watch-launch-film"
+                  type="button"
+                  onClick={() => setShowDemoModal(true)}
+                  aria-label="Open Pathfinder 2.0 55-second product walkthrough with sound"
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-white/25 bg-black/80 px-4 text-xs font-medium text-white transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:text-[13px]"
+                >
                   Watch 55s walkthrough
+                </button>
+                <span className="hidden font-mono text-[11px] text-[#A0A0AB] sm:inline-block">
+                  Click video or button to open with sound
                 </span>
-                <span className="hidden rounded-md border border-white/15 bg-black/80 px-3 py-1.5 font-mono text-[11px] text-[#D4D4D8] tabular-nums sm:inline-block">
-                  Click anywhere to open with sound
-                </span>
-              </button>
+              </div>
             </div>
           </div>
         </section>
