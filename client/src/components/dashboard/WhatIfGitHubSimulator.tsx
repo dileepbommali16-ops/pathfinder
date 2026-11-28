@@ -205,16 +205,6 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
 
         const scenarios: { action: string; detail: string; overrides: Record<string, unknown> }[] = [
             {
-                action: "Verify GitHub Proof (85/100)",
-                detail: "Unlocks Proof-Verified tier",
-                overrides: { github_verified_score: 85 },
-            },
-            {
-                action: "Pass ATS Resume Scan (85%)",
-                detail: "Unlocks Resume Evidence",
-                overrides: { ats_score: 85 },
-            },
-            {
                 action: "+1 Real Internship",
                 detail: `Internships ${internships} → ${Math.min(5, internships + 1)}`,
                 overrides: { internships: Math.min(5, internships + 1) },
@@ -326,7 +316,16 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
     // Cross-check claimed resume skills against detected GitHub proof
     const skillCrossCheck = useMemo(() => {
         if (!ghResult) return { proven: [] as string[], unproven: [] as string[] };
-        const langs = (ghResult.topLanguages || []).map((l) => l.toLowerCase());
+        const toLangName = (item: unknown): string => {
+            if (typeof item === "string") return item;
+            if (Array.isArray(item) && item.length > 0) return String(item[0]);
+            if (item && typeof item === "object") {
+                const o = item as Record<string, unknown>;
+                return String(o.language ?? o.name ?? o.lang ?? "");
+            }
+            return "";
+        };
+        const langs = (ghResult.topLanguages || []).map((l) => toLangName(l).toLowerCase()).filter(Boolean);
         const proven: string[] = [];
         const unproven: string[] = [];
 
@@ -675,14 +674,29 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
 
                                 {ghResult.topLanguages && ghResult.topLanguages.length > 0 && (
                                     <div className="mt-3 flex flex-wrap gap-1.5">
-                                        {ghResult.topLanguages.map((lang) => (
-                                            <span
-                                                key={lang}
-                                                className="rounded border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]"
-                                            >
-                                                {lang}
-                                            </span>
-                                        ))}
+                                        {ghResult.topLanguages && ghResult.topLanguages.length > 0 && (
+                                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                                {ghResult.topLanguages.map((lang: unknown, idx: number) => {
+                                                    const label =
+                                                        typeof lang === "string"
+                                                            ? lang
+                                                            : Array.isArray(lang)
+                                                                ? String(lang[0] ?? "")
+                                                                : lang && typeof lang === "object"
+                                                                    ? String((lang as Record<string, unknown>).language ?? (lang as Record<string, unknown>).name ?? "")
+                                                                    : "";
+                                                    if (!label) return null;
+                                                    return (
+                                                        <span
+                                                            key={`${label}-${idx}`}
+                                                            className="rounded border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]"
+                                                        >
+                                                            {label}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
