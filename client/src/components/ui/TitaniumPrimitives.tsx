@@ -184,12 +184,7 @@ export const WORKSPACE_SLIDES: WorkspaceSlideItem[] = [
     label: "My Progress",
     subtitle: "ML score trend, ATS scans, arena verdicts & interview scorecards",
   },
-  {
-    id: "profile",
-    index: "07",
-    label: "Profile & Settings",
-    subtitle: "Academic scores, skills & target company calibration",
-  },
+
 ];
 
 interface SlideTransitionBarProps {

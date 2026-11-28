@@ -40,7 +40,7 @@ interface GitHubVerifyResponse {
     publicRepos?: number;
     totalStars?: number;
     followers?: number;
-    topLanguages?: string[];
+    topLanguages?: unknown[];
     authenticityScore: number;
     isVerified: boolean;
     verdict: string;
@@ -92,6 +92,16 @@ function extractBaseSkills(profile?: SimulatorProfileInput): string[] {
     return Array.isArray(raw) ? raw.map((s) => String(s).trim()).filter(Boolean) : [];
 }
 
+function toLangName(item: unknown): string {
+    if (typeof item === "string") return item;
+    if (Array.isArray(item) && item.length > 0) return String(item[0] ?? "");
+    if (item && typeof item === "object") {
+        const o = item as Record<string, unknown>;
+        return String(o.language ?? o.name ?? o.lang ?? "");
+    }
+    return "";
+}
+
 export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
     profile,
     baselineChance = 67.3,
@@ -106,7 +116,6 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
     const initialBacklogs = Number(profile?.backlogs ?? profile?.activeBacklogs ?? 0);
     const baseSkills = useMemo(() => extractBaseSkills(profile), [profile]);
 
-    // What-If Simulator State
     const [cgpa, setCgpa] = useState<number>(initialCgpa);
     const [coding, setCoding] = useState<number>(initialCoding);
     const [communication, setCommunication] = useState<number>(initialComm);
@@ -119,11 +128,9 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
     const [simLoading, setSimLoading] = useState<boolean>(false);
     const [simError, setSimError] = useState<string>("");
 
-    // Counterfactual Optimizer State
     const [optimizing, setOptimizing] = useState<boolean>(false);
     const [counterfactuals, setCounterfactuals] = useState<CounterfactualResult[]>([]);
 
-    // GitHub Proof-of-Work State
     const [githubInput, setGithubInput] = useState<string>(profile?.githubUrl || "");
     const [ghLoading, setGhLoading] = useState<boolean>(false);
     const [ghError, setGhError] = useState<string>("");
@@ -132,8 +139,7 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
     const debounceRef = useRef<number | null>(null);
 
     const combinedSkills = useMemo(() => {
-        const merged = new Set([...baseSkills, ...extraSkills]);
-        return Array.from(merged);
+        return Array.from(new Set([...baseSkills, ...extraSkills]));
     }, [baseSkills, extraSkills]);
 
     const buildPredictPayload = useCallback(
@@ -186,7 +192,6 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
         }
     }, [apiBase, buildPredictPayload]);
 
-    // Debounced live ML prediction whenever any slider or skill changes
     useEffect(() => {
         if (debounceRef.current) window.clearTimeout(debounceRef.current);
         debounceRef.current = window.setTimeout(() => {
@@ -197,13 +202,22 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
         };
     }, [runLiveSimulation]);
 
-    // Counterfactual Optimizer: tests 4 real single-action scenarios against Random Forest
     const runCounterfactualOptimizer = async () => {
         setOptimizing(true);
         setCounterfactuals([]);
         const currentScore = simResult?.chance ?? baselineChance;
 
         const scenarios: { action: string; detail: string; overrides: Record<string, unknown> }[] = [
+            {
+                action: "Verify GitHub Proof (85/100)",
+                detail: "Unlocks Proof-Verified tier",
+                overrides: { github_verified_score: 85 },
+            },
+            {
+                action: "Pass ATS Resume Scan (85%)",
+                detail: "Unlocks Resume Evidence",
+                overrides: { ats_score: 85 },
+            },
             {
                 action: "+1 Real Internship",
                 detail: `Internships ${internships} → ${Math.min(5, internships + 1)}`,
@@ -264,12 +278,11 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
         }
     };
 
-    // GitHub Proof-of-Work Verification
     const runGitHubVerify = async (e?: React.FormEvent) => {
         e?.preventDefault();
         const cleaned = githubInput.trim();
         if (!cleaned) {
-            setGhError("Enter a GitHub username (e.g. github.com/username/repo) or repository URL.");
+            setGhError("Enter a GitHub username (e.g. octocat) or repository URL.");
             return;
         }
         setGhLoading(true);
@@ -313,19 +326,14 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
     const liveChance = Math.max(0, Math.min(100, Number((simResult?.chance ?? baselineChance).toFixed(1))));
     const deltaFromBase = Number((liveChance - baselineChance).toFixed(1));
 
-    // Cross-check claimed resume skills against detected GitHub proof
+    const topLangLabels = useMemo(
+        () => (ghResult?.topLanguages || []).map(toLangName).filter(Boolean),
+        [ghResult]
+    );
+
     const skillCrossCheck = useMemo(() => {
         if (!ghResult) return { proven: [] as string[], unproven: [] as string[] };
-        const toLangName = (item: unknown): string => {
-            if (typeof item === "string") return item;
-            if (Array.isArray(item) && item.length > 0) return String(item[0]);
-            if (item && typeof item === "object") {
-                const o = item as Record<string, unknown>;
-                return String(o.language ?? o.name ?? o.lang ?? "");
-            }
-            return "";
-        };
-        const langs = (ghResult.topLanguages || []).map((l) => toLangName(l).toLowerCase()).filter(Boolean);
+        const langs = topLangLabels.map((l) => l.toLowerCase());
         const proven: string[] = [];
         const unproven: string[] = [];
 
@@ -348,29 +356,29 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
             }
         }
         return { proven, unproven };
-    }, [ghResult, baseSkills]);
+    }, [ghResult, baseSkills, topLangLabels]);
 
     return (
         <div className="space-y-6">
-            {/* Header Banner */}
-            <div className="rounded-2xl border border-white/[0.08] bg-[#0D0D12] p-5 sm:p-6">
+            {/* Header Card — Titanium Monochrome */}
+            <div className="pf-titanium-card rounded-2xl border border-white/[0.08] bg-[#09090B]/90 p-6 backdrop-blur-md">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <span className="inline-flex items-center gap-2 rounded-full border border-[#5BC0DE]/30 bg-[#5BC0DE]/10 px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-[#5BC0DE]">
-                            Explainable ML · Counterfactual Lab + Proof of Work
+                        <span className="inline-flex items-center rounded-full border border-white/[0.12] bg-white/[0.04] px-3 py-1 font-mono text-[11px] uppercase tracking-[0.14em] text-[#A1A1AA]">
+                            Explainable ML · Counterfactual Lab &amp; Proof of Work
                         </span>
-                        <h2 className="mt-2.5 text-xl font-semibold tracking-tight text-[#FAFAFA] sm:text-2xl">
+                        <h2 className="mt-3 text-xl font-semibold tracking-tight text-[#FAFAFA] sm:text-2xl">
                             What-If ML Simulator &amp; GitHub Proof Verifier
                         </h2>
-                        <p className="mt-1 text-sm text-[#A1A1AA]">
-                            Drag sliders to simulate real Random Forest placement probability changes, find your
+                        <p className="mt-1.5 text-sm text-[#A1A1AA]">
+                            Adjust sliders to simulate live Random Forest placement probability changes, rank your
                             fastest path past the 75% Tier-1 cutoff, and verify claimed resume skills against real GitHub code.
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={resetSliders}
-                        className="rounded-lg border border-white/15 bg-white/[0.04] px-3.5 py-2 text-xs font-medium text-[#FAFAFA] transition-colors hover:bg-white/[0.08]"
+                        className="rounded-xl border border-white/[0.12] bg-white/[0.04] px-4 py-2 text-xs font-medium text-[#FAFAFA] transition-colors hover:border-white/25 hover:bg-white/[0.08]"
                     >
                         Reset to My Profile
                     </button>
@@ -380,28 +388,28 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
             {/* Main 2-Column Workspace */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                 {/* LEFT COLUMN: Interactive What-If ML Simulator */}
-                <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-[#0D0D12] p-5 sm:p-6 lg:col-span-7">
+                <div className="pf-titanium-card space-y-5 rounded-2xl border border-white/[0.08] bg-[#09090B]/90 p-6 backdrop-blur-md lg:col-span-7">
                     <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/[0.08] pb-5">
                         <div>
-                            <p className="font-mono text-[11px] uppercase tracking-wider text-[#8A8A92]">
+                            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8A8A92]">
                                 Live Simulated Placement Probability
                             </p>
-                            <div className="mt-1 flex items-baseline gap-3">
-                                <span className="text-4xl font-bold tabular-nums text-[#FAFAFA]">
+                            <div className="mt-1.5 flex items-baseline gap-3">
+                                <span className="text-4xl font-semibold tabular-nums tracking-tight text-[#FAFAFA]">
                                     {liveChance.toFixed(1)}%
                                 </span>
                                 <span
-                                    className={`rounded-md px-2 py-0.5 font-mono text-xs font-semibold ${deltaFromBase > 0
-                                        ? "bg-emerald-500/15 text-emerald-300"
-                                        : deltaFromBase < 0
-                                            ? "bg-rose-500/15 text-rose-300"
-                                            : "bg-white/10 text-[#A1A1AA]"
+                                    className={`rounded-md border px-2 py-0.5 font-mono text-xs font-medium ${deltaFromBase > 0
+                                            ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+                                            : deltaFromBase < 0
+                                                ? "border-rose-500/25 bg-rose-500/10 text-rose-300"
+                                                : "border-white/10 bg-white/[0.04] text-[#A1A1AA]"
                                         }`}
                                 >
                                     {deltaFromBase > 0 ? `+${deltaFromBase.toFixed(1)}%` : `${deltaFromBase.toFixed(1)}%`} vs current
                                 </span>
                             </div>
-                            <p className="mt-1 text-xs text-[#A1A1AA]">
+                            <p className="mt-1.5 text-xs text-[#8A8A92]">
                                 {simLoading
                                     ? "Recalculating on Random Forest ML engine..."
                                     : simResult?.label || "Random Forest ML Engine"}
@@ -412,29 +420,26 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                             type="button"
                             onClick={runCounterfactualOptimizer}
                             disabled={optimizing}
-                            className="inline-flex items-center gap-2 rounded-lg border border-[#5BC0DE]/40 bg-[#5BC0DE]/15 px-4 py-2.5 text-xs font-semibold text-[#5BC0DE] transition-colors hover:bg-[#5BC0DE]/25 disabled:opacity-50"
+                            className="pf-btn-primary inline-flex h-10 items-center rounded-xl bg-[#FAFAFA] px-4 text-xs font-semibold text-[#09090B] transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
                             {optimizing ? "Running ML Scenarios..." : "Find Fastest Path to 75%+"}
                         </button>
                     </div>
 
-                    {/* Progress Bar with 75% Tier-1 Marker */}
+                    {/* Monochrome Titanium Progress Bar with 75% Tier-1 Marker */}
                     <div>
                         <div className="mb-1.5 flex items-center justify-between font-mono text-[11px] text-[#8A8A92]">
                             <span>0%</span>
-                            <span className="text-[#5BC0DE]">Tier-1 Cutoff · 75%</span>
+                            <span className="text-[#D4D4D8]">Tier-1 Cutoff · 75%</span>
                             <span>100%</span>
                         </div>
-                        <div className="relative h-3 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                             <div
-                                className={`h-full rounded-full transition-all duration-300 ${liveChance >= 75
-                                    ? "bg-gradient-to-r from-emerald-500 to-cyan-400"
-                                    : "bg-gradient-to-r from-[#5BC0DE] to-indigo-400"
-                                    }`}
+                                className="h-full rounded-full bg-[#FAFAFA] transition-all duration-300"
                                 style={{ width: `${liveChance}%` }}
                             />
                             <div
-                                className="absolute top-0 h-full w-0.5 bg-white/70"
+                                className="absolute top-0 h-full w-0.5 bg-white/60"
                                 style={{ left: "75%" }}
                                 title="Tier-1 Cutoff (75%)"
                             />
@@ -442,76 +447,28 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                     </div>
 
                     {simError && (
-                        <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+                        <p className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-300">
                             {simError}
                         </p>
                     )}
 
                     {/* Interactive Sliders Grid */}
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                         {[
-                            {
-                                label: "CGPA",
-                                value: cgpa,
-                                display: cgpa.toFixed(1),
-                                min: 5.0,
-                                max: 10.0,
-                                step: 0.1,
-                                onChange: setCgpa,
-                            },
-                            {
-                                label: "Coding Index (DSA)",
-                                value: coding,
-                                display: `${coding.toFixed(1)} / 10`,
-                                min: 1.0,
-                                max: 10.0,
-                                step: 0.1,
-                                onChange: setCoding,
-                            },
-                            {
-                                label: "Communication & Viva",
-                                value: communication,
-                                display: `${communication.toFixed(1)} / 10`,
-                                min: 1.0,
-                                max: 10.0,
-                                step: 0.1,
-                                onChange: setCommunication,
-                            },
-                            {
-                                label: "Internships",
-                                value: internships,
-                                display: String(internships),
-                                min: 0,
-                                max: 5,
-                                step: 1,
-                                onChange: setInternships,
-                            },
-                            {
-                                label: "Deployed Projects",
-                                value: projectsCount,
-                                display: String(projectsCount),
-                                min: 0,
-                                max: 10,
-                                step: 1,
-                                onChange: setProjectsCount,
-                            },
-                            {
-                                label: "Active Backlogs",
-                                value: backlogs,
-                                display: String(backlogs),
-                                min: 0,
-                                max: 5,
-                                step: 1,
-                                onChange: setBacklogs,
-                            },
+                            { label: "CGPA", value: cgpa, display: cgpa.toFixed(1), min: 5.0, max: 10.0, step: 0.1, onChange: setCgpa },
+                            { label: "Coding Index (DSA)", value: coding, display: `${coding.toFixed(1)} / 10`, min: 1.0, max: 10.0, step: 0.1, onChange: setCoding },
+                            { label: "Communication & Viva", value: communication, display: `${communication.toFixed(1)} / 10`, min: 1.0, max: 10.0, step: 0.1, onChange: setCommunication },
+                            { label: "Internships", value: internships, display: String(internships), min: 0, max: 5, step: 1, onChange: setInternships },
+                            { label: "Deployed Projects", value: projectsCount, display: String(projectsCount), min: 0, max: 10, step: 1, onChange: setProjectsCount },
+                            { label: "Active Backlogs", value: backlogs, display: String(backlogs), min: 0, max: 5, step: 1, onChange: setBacklogs },
                         ].map((item) => (
                             <div
                                 key={item.label}
-                                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5"
+                                className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3.5"
                             >
                                 <div className="mb-2 flex items-center justify-between text-xs">
-                                    <span className="font-medium text-[#D4D4D8]">{item.label}</span>
-                                    <span className="font-mono font-semibold text-[#5BC0DE]">{item.display}</span>
+                                    <span className="font-medium text-[#A1A1AA]">{item.label}</span>
+                                    <span className="font-mono font-semibold tabular-nums text-[#FAFAFA]">{item.display}</span>
                                 </div>
                                 <input
                                     type="range"
@@ -520,7 +477,7 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                     step={item.step}
                                     value={item.value}
                                     onChange={(e) => item.onChange(Number(e.target.value))}
-                                    className="h-1.5 w-full cursor-pointer accent-[#5BC0DE]"
+                                    className="h-1.5 w-full cursor-pointer accent-white"
                                 />
                             </div>
                         ))}
@@ -528,7 +485,7 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
 
                     {/* High-Impact Skill Toggles */}
                     <div>
-                        <p className="mb-2 text-xs font-medium text-[#A1A1AA]">
+                        <p className="mb-2.5 text-xs font-medium text-[#8A8A92]">
                             Toggle High-Impact Skills to Simulate Resume Upgrades:
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -543,11 +500,11 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                         type="button"
                                         disabled={alreadyInProfile}
                                         onClick={() => toggleSkill(skill)}
-                                        className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${alreadyInProfile
-                                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 opacity-80"
-                                            : active
-                                                ? "border-[#5BC0DE]/50 bg-[#5BC0DE]/20 text-[#FAFAFA]"
-                                                : "border-white/10 bg-white/[0.03] text-[#A1A1AA] hover:border-white/25 hover:text-white"
+                                        className={`rounded-lg border px-3 py-1.5 font-mono text-[11px] font-medium transition-colors ${alreadyInProfile
+                                                ? "border-white/20 bg-white/[0.08] text-[#D4D4D8] opacity-80"
+                                                : active
+                                                    ? "border-[#FAFAFA] bg-[#FAFAFA] text-[#09090B]"
+                                                    : "border-white/[0.1] bg-white/[0.02] text-[#A1A1AA] hover:border-white/25 hover:text-[#FAFAFA]"
                                             }`}
                                     >
                                         {alreadyInProfile ? `✓ ${skill}` : active ? `+ ${skill}` : skill}
@@ -559,27 +516,27 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
 
                     {/* Counterfactual Optimizer Results */}
                     {counterfactuals.length > 0 && (
-                        <div className="rounded-xl border border-[#5BC0DE]/25 bg-[#5BC0DE]/[0.05] p-4">
-                            <p className="font-mono text-[11px] uppercase tracking-wider text-[#5BC0DE]">
-                                ML Sensitivity Ranking — Highest ROI Actions Right Now
+                        <div className="rounded-xl border border-white/[0.1] bg-white/[0.02] p-4">
+                            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#A1A1AA]">
+                                ML Sensitivity Ranking — Highest ROI Actions
                             </p>
                             <div className="mt-3 space-y-2">
                                 {counterfactuals.map((cf, idx) => (
                                     <div
                                         key={cf.action}
-                                        className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-[#09090B]/80 px-3.5 py-2.5 text-xs"
+                                        className="flex items-center justify-between rounded-lg border border-white/[0.07] bg-[#09090B]/90 px-3.5 py-2.5 text-xs"
                                     >
                                         <div>
-                                            <span className="mr-2 font-mono text-[#5BC0DE]">#{idx + 1}</span>
-                                            <span className="font-semibold text-[#FAFAFA]">{cf.action}</span>
+                                            <span className="mr-2 font-mono text-[#8A8A92]">0{idx + 1}</span>
+                                            <span className="font-medium text-[#FAFAFA]">{cf.action}</span>
                                             <span className="ml-2 text-[#8A8A92]">({cf.detail})</span>
                                         </div>
-                                        <div className="flex items-center gap-2 font-mono">
+                                        <div className="flex items-center gap-2 font-mono tabular-nums">
                                             <span className="text-[#A1A1AA]">{cf.newChance.toFixed(1)}%</span>
                                             <span
-                                                className={`rounded px-1.5 py-0.5 font-semibold ${cf.delta > 0
-                                                    ? "bg-emerald-500/15 text-emerald-300"
-                                                    : "bg-white/10 text-[#A1A1AA]"
+                                                className={`rounded border px-1.5 py-0.5 text-[11px] font-semibold ${cf.delta > 0
+                                                        ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+                                                        : "border-white/10 bg-white/[0.04] text-[#8A8A92]"
                                                     }`}
                                             >
                                                 {cf.delta > 0 ? `+${cf.delta.toFixed(1)}%` : `${cf.delta.toFixed(1)}%`}
@@ -593,12 +550,12 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                 </div>
 
                 {/* RIGHT COLUMN: GitHub Proof-of-Work Verifier */}
-                <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-[#0D0D12] p-5 sm:p-6 lg:col-span-5">
+                <div className="pf-titanium-card space-y-5 rounded-2xl border border-white/[0.08] bg-[#09090B]/90 p-6 backdrop-blur-md lg:col-span-5">
                     <div>
-                        <p className="font-mono text-[11px] uppercase tracking-wider text-emerald-400">
+                        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8A8A92]">
                             Anti-Fake-Resume Proof Check
                         </p>
-                        <h3 className="mt-1 text-lg font-semibold text-[#FAFAFA]">
+                        <h3 className="mt-1.5 text-lg font-semibold text-[#FAFAFA]">
                             GitHub Proof-of-Work Verifier
                         </h3>
                         <p className="mt-1 text-xs text-[#A1A1AA]">
@@ -613,19 +570,19 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                             value={githubInput}
                             onChange={(e) => setGithubInput(e.target.value)}
                             placeholder="e.g. octocat or repo URL"
-                            className="w-full rounded-lg border border-white/15 bg-[#09090B] px-3.5 py-2.5 text-xs text-[#FAFAFA] placeholder-[#71717A] focus:border-[#5BC0DE] focus:outline-none"
+                            className="w-full rounded-xl border border-white/[0.12] bg-black/60 px-3.5 py-2.5 text-xs text-[#FAFAFA] placeholder-[#71717A] focus:border-white/35 focus:outline-none"
                         />
                         <button
                             type="submit"
                             disabled={ghLoading}
-                            className="shrink-0 rounded-lg bg-[#FAFAFA] px-4 py-2.5 text-xs font-semibold text-[#09090B] transition-opacity hover:opacity-90 disabled:opacity-50"
+                            className="shrink-0 rounded-xl bg-[#FAFAFA] px-4 py-2.5 text-xs font-semibold text-[#09090B] transition-opacity hover:opacity-90 disabled:opacity-50"
                         >
                             {ghLoading ? "Auditing..." : "Verify"}
                         </button>
                     </form>
 
                     {ghError && (
-                        <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+                        <p className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-300">
                             {ghError}
                         </p>
                     )}
@@ -633,7 +590,7 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                     {ghResult ? (
                         <div className="space-y-4">
                             {/* Score & Verdict Card */}
-                            <div className="rounded-xl border border-white/[0.08] bg-[#09090B] p-4">
+                            <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
                                 <div className="flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
                                         {ghResult.avatarUrl && (
@@ -654,15 +611,15 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-2xl font-bold tabular-nums text-[#FAFAFA]">
+                                        <span className="text-2xl font-semibold tabular-nums text-[#FAFAFA]">
                                             {ghResult.authenticityScore}
                                         </span>
                                         <span className="text-xs text-[#8A8A92]">/100</span>
                                         <div>
                                             <span
-                                                className={`inline-block rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${ghResult.isVerified
-                                                    ? "bg-emerald-500/15 text-emerald-300"
-                                                    : "bg-amber-500/15 text-amber-300"
+                                                className={`inline-block rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold ${ghResult.isVerified
+                                                        ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+                                                        : "border-amber-500/25 bg-amber-500/10 text-amber-300"
                                                     }`}
                                             >
                                                 {ghResult.isVerified ? "PROOF VERIFIED" : "PROOF NEEDED"}
@@ -670,38 +627,23 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                         </div>
                                     </div>
                                 </div>
-                                <p className="mt-3 text-xs text-[#D4D4D8]">{ghResult.verdict}</p>
+                                <p className="mt-3 text-xs leading-relaxed text-[#D4D4D8]">{ghResult.verdict}</p>
 
-                                {ghResult.topLanguages && ghResult.topLanguages.length > 0 && (
+                                {topLangLabels.length > 0 && (
                                     <div className="mt-3 flex flex-wrap gap-1.5">
-                                        {ghResult.topLanguages && ghResult.topLanguages.length > 0 && (
-                                            <div className="mt-3 flex flex-wrap gap-1.5">
-                                                {ghResult.topLanguages.map((lang: unknown, idx: number) => {
-                                                    const label =
-                                                        typeof lang === "string"
-                                                            ? lang
-                                                            : Array.isArray(lang)
-                                                                ? String(lang[0] ?? "")
-                                                                : lang && typeof lang === "object"
-                                                                    ? String((lang as Record<string, unknown>).language ?? (lang as Record<string, unknown>).name ?? "")
-                                                                    : "";
-                                                    if (!label) return null;
-                                                    return (
-                                                        <span
-                                                            key={`${label}-${idx}`}
-                                                            className="rounded border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]"
-                                                        >
-                                                            {label}
-                                                        </span>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+                                        {topLangLabels.map((label, idx) => (
+                                            <span
+                                                key={`${label}-${idx}`}
+                                                className="rounded-md border border-white/[0.1] bg-white/[0.04] px-2 py-0.5 font-mono text-[10px] text-[#D4D4D8]"
+                                            >
+                                                {label}
+                                            </span>
+                                        ))}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Repo Engineering Signals (if a specific repo URL was audited) */}
+                            {/* Repo Engineering Signals */}
                             {ghResult.repoMetrics && (
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                     {[
@@ -716,8 +658,8 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                         <div
                                             key={sig.label}
                                             className={`rounded-lg border px-3 py-2 font-mono text-[11px] ${sig.ok
-                                                ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
-                                                : "border-white/[0.06] bg-white/[0.02] text-[#8A8A92]"
+                                                    ? "border-white/20 bg-white/[0.06] text-[#FAFAFA]"
+                                                    : "border-white/[0.06] bg-white/[0.02] text-[#8A8A92]"
                                                 }`}
                                         >
                                             {sig.ok ? "✓ " : "○ "}
@@ -729,20 +671,20 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
 
                             {/* Resume vs. GitHub Skill Cross-Check */}
                             {baseSkills.length > 0 && (
-                                <div className="rounded-xl border border-white/[0.08] bg-[#09090B] p-4 space-y-3">
-                                    <p className="font-mono text-[11px] uppercase tracking-wider text-[#8A8A92]">
+                                <div className="space-y-3 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+                                    <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#8A8A92]">
                                         Resume vs. GitHub Code Audit
                                     </p>
                                     {skillCrossCheck.proven.length > 0 && (
                                         <div>
-                                            <p className="mb-1.5 text-[11px] font-medium text-emerald-400">
+                                            <p className="mb-1.5 text-[11px] font-medium text-emerald-300">
                                                 Proven in Public Code ({skillCrossCheck.proven.length})
                                             </p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {skillCrossCheck.proven.map((s) => (
                                                     <span
                                                         key={s}
-                                                        className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-300"
+                                                        className="rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-300"
                                                     >
                                                         ✓ {s}
                                                     </span>
@@ -752,14 +694,14 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                     )}
                                     {skillCrossCheck.unproven.length > 0 && (
                                         <div>
-                                            <p className="mb-1.5 text-[11px] font-medium text-amber-400">
+                                            <p className="mb-1.5 text-[11px] font-medium text-amber-300">
                                                 Claimed on Resume — No Repo Evidence Yet ({skillCrossCheck.unproven.length})
                                             </p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {skillCrossCheck.unproven.map((s) => (
                                                     <span
                                                         key={s}
-                                                        className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300"
+                                                        className="rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300"
                                                     >
                                                         ! {s}
                                                     </span>
@@ -770,32 +712,31 @@ export const WhatIfGitHubSimulator: React.FC<WhatIfGitHubSimulatorProps> = ({
                                 </div>
                             )}
 
-                            {/* Optional AI Repo Grill CTA */}
                             {onAskCoach && (
                                 <button
                                     type="button"
                                     onClick={() =>
                                         onAskCoach(
                                             `Grill me like an SDE-1 interviewer on my GitHub ${ghResult.repoFullName || ghResult.username
-                                            } (Authenticity ${ghResult.authenticityScore}/100, languages: ${(
-                                                ghResult.topLanguages || []
-                                            ).join(", ")}). Ask 1 tough architecture question first.`
+                                            } (Authenticity ${ghResult.authenticityScore}/100, languages: ${topLangLabels.join(
+                                                ", "
+                                            )}). Ask 1 tough architecture question first.`
                                         )
                                     }
-                                    className="w-full rounded-lg border border-[#5BC0DE]/40 bg-[#5BC0DE]/15 px-4 py-2.5 text-xs font-semibold text-[#5BC0DE] transition-colors hover:bg-[#5BC0DE]/25"
+                                    className="w-full rounded-xl border border-white/[0.14] bg-white/[0.05] px-4 py-2.5 text-xs font-semibold text-[#FAFAFA] transition-colors hover:border-white/30 hover:bg-white/[0.1]"
                                 >
                                     Grill Me on This Repo (AI Coach)
                                 </button>
                             )}
                         </div>
                     ) : (
-                        <div className="rounded-xl border border-dashed border-white/10 bg-[#09090B]/60 p-6 text-center">
+                        <div className="rounded-xl border border-dashed border-white/[0.12] bg-white/[0.02] p-6 text-center">
                             <p className="text-xs font-medium text-[#D4D4D8]">
                                 Ready to verify live GitHub repositories
                             </p>
-                            <p className="mt-1 text-[11px] text-[#71717A]">
-                                Try entering <span className="font-mono text-[#5BC0DE]">octocat</span> or
-                                a full repository URL to test live code authenticity scoring.
+                            <p className="mt-1 text-[11px] text-[#8A8A92]">
+                                Try entering <span className="font-mono text-[#FAFAFA]">octocat</span> or a full
+                                repository URL to test live code authenticity scoring.
                             </p>
                         </div>
                     )}
