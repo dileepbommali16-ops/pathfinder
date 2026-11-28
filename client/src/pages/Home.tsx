@@ -20,6 +20,7 @@ import { CompanyPlacementRadar } from "@/components/dashboard/CompanyPlacementRa
 import { MockInterviewConsole } from "@/components/dashboard/MockInterviewConsole";
 import { JDCustomTailor } from "@/components/dashboard/JDCustomTailor";
 import { LiveCodingInterviewArena } from "@/components/dashboard/LiveCodingInterviewArena";
+import { WhatIfGitHubSimulator } from "@/components/dashboard/WhatIfGitHubSimulator";
 import {
   StudentProfileState,
   DEFAULT_STUDENT_PROFILE,
@@ -2755,10 +2756,10 @@ export default function Home({ initialTab, initialAuthView }: HomeProps = {}) {
                 transition={{ duration: 0.12 }}
                 className="space-y-16 sm:space-y-20"
               >
-                <ProjectRecommender
-                  targetRole={profile.targetRole}
-                  onAskCoach={handleAskCoach}
+                <WhatIfGitHubSimulator
+                  profile={profile}
                   apiBase={API_BASE}
+                  onAskCoach={handleAskCoach}
                 />
               </motion.div>
             )}

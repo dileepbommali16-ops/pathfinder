@@ -169,8 +169,8 @@ export const WORKSPACE_SLIDES: WorkspaceSlideItem[] = [
   {
     id: "projects",
     index: "04",
-    label: "Project Blueprints",
-    subtitle: "28 production software & hardware system architectures",
+    label: "What-If & GitHub Proof",
+    subtitle: "Live Random Forest counterfactual simulator & GitHub code verifier",
   },
   {
     id: "analytics",
